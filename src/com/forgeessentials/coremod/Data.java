@@ -18,8 +18,8 @@ public class Data
     public static final String      NAME        = "FE Core";
     
     public static final String      BASEPACKAGE = Data.class.getPackage().getName();
-    public static final String      SETUPCLASS  = BASEPACKAGE + ".Coremod";
-    public static final String[]    ASMCLASS    = { BASEPACKAGE + ".ASM" };
+    public static final String      SETUPCLASS  = Coremod.class.getName();
+    public static final String[]    ASMCLASS    = { ASM.class.getName() };
     
     public static final String      JSONURL     = "http://driesgames.game-server.cc/ForgeEssentials/";
     public static final String      LIBURL      = "http://driesgames.game-server.cc/ForgeEssentials/libs/";
