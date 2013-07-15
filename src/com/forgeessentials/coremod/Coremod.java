@@ -5,10 +5,13 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.jar.JarFile;
+import java.util.jar.Manifest;
 
 import net.minecraft.launchwrapper.LaunchClassLoader;
 
@@ -30,7 +33,7 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
  * @author Dries007
  * (c) Copyright  Dries007.net 2013
  * 
- * Written for ForgeEssentials 2, but might be useful for others.
+ * Written for ForgeEssentials, but might be useful for others.
  */
 @IFMLLoadingPlugin.Name(Data.NAME)
 @IFMLLoadingPlugin.MCVersion(Data.MC_VERSION)
@@ -67,6 +70,9 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             
             File modulesFolder = new File(FEfolder, "modules");
             if (!modulesFolder.exists()) modulesFolder.mkdirs();
+            
+            File libsFolder = new File(FEfolder, "libs");
+            if (!libsFolder.exists()) libsFolder.mkdirs();
             
             FileInputStream in = new FileInputStream(configFile);
             Properties properties = new Properties();
@@ -142,29 +148,102 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                     }
                 }
                 
+                /*
+                 * Downloading modules
+                 */
                 for (String name : toDownload.keySet())
                 {
-                    FileUtils.copyURLToFile(toDownload.get(name), new File(modulesFolder, name));
+                    try
+                    {
+                        System.out.println("[" + Data.NAME + "] Downloading module " + name);
+                        FileUtils.copyURLToFile(toDownload.get(name), new File(modulesFolder, name));
+                    }
+                    catch (Exception e)
+                    {}
+                }
+
+                /*
+                 * Get all current libs
+                 */
+                ArrayList<File> libstodelete = new ArrayList<File>();
+                for (File lib : libsFolder.listFiles())
+                {
+                    libstodelete.add(lib);
+                }
+                
+                /*
+                 * Get all wanted libs
+                 */
+                for (File file : modulesFolder.listFiles())
+                {
+                    if (!file.getName().endsWith(".jar")) file.delete();
+                    else
+                    {
+                        System.out.println(file.getName());
+                        
+                        JarFile jar = new JarFile(file);
+                        Manifest mf = jar.getManifest();
+                        if (mf != null)
+                        {
+                            String libs = mf.getMainAttributes().getValue(Data.LIBKEY);
+                            for (String lib : libs.split(";"))
+                            {
+                                File wannabelib = new File(libsFolder, lib);
+                                if (wannabelib.exists())
+                                {
+                                    libstodelete.remove(wannabelib);
+                                }
+                                else
+                                {
+                                    try
+                                    {
+                                        System.out.println("[" + Data.NAME + "] Downloading lib " + lib);
+                                        FileUtils.copyURLToFile(new URL(Data.LIBURL + lib), wannabelib);
+                                    }
+                                    catch (Exception e)
+                                    {}
+                                }
+                            }
+                        }
+                        jar.close();
+                    }
+                }
+                /*
+                 * Remove bad/old libs
+                 */
+                for (File lib : libstodelete)
+                {
+                    System.out.println("[" + Data.NAME + "] Removing unneeded lib " + lib.getName());
+                    lib.delete();
+                }
+                
+                /*
+                 * Classload libs
+                 */
+                for (File lib : libsFolder.listFiles())
+                {
+                    System.out.println("[" + Data.NAME + "] Loading lib " + lib.getName());
+                    Data.classLoader.addURL(lib.toURI().toURL());
+                }
+                System.out.println("[" + Data.NAME + "] Lib Classloading done.");
+                
+                /*
+                 * We don't want to load obf files in a deobf environment...
+                 */
+                if (classLoad)
+                {
+                    for (File file : modulesFolder.listFiles())
+                    {
+                        System.out.println("[" + Data.NAME + "] Loading module " + file.getName());
+                        Data.classLoader.addURL(file.toURI().toURL());
+                    }
+                    System.out.println("[" + Data.NAME + "] Module Classloading done.");
                 }
             }
             
             FileOutputStream out = new FileOutputStream(configFile);
             properties.store(out, comments);
             out.close();
-            
-            System.out.println("[" + Data.NAME + "] Updates done.");
-            
-            /*
-             * We don't want to load obf files in a deobf environment...
-             */
-            if (classLoad)
-            {
-                for (File file : modulesFolder.listFiles())
-                {
-                    Data.classLoader.addURL(file.toURI().toURL());
-                }
-                System.out.println("[" + Data.NAME + "] Classloading done.");
-            }
         }
         catch (Exception e)
         {

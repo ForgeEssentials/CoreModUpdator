@@ -8,7 +8,7 @@ import net.minecraft.launchwrapper.IClassTransformer;
  * @author Dries007
  * (c) Copyright  Dries007.net 2013
  * 
- * Written for ForgeEssentials 2, but might be useful for others.
+ * Written for ForgeEssentials, but might be useful for others.
  */
 public class ASM implements IClassTransformer
 {

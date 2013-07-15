@@ -10,7 +10,7 @@ import net.minecraft.launchwrapper.LaunchClassLoader;
  * @author Dries007
  * (c) Copyright  Dries007.net 2013
  * 
- * Written for ForgeEssentials 2, but might be useful for others.
+ * Written for ForgeEssentials, but might be useful for others.
  */
 public class Data
 {
@@ -22,6 +22,9 @@ public class Data
     public static final String[]    ASMCLASS    = { BASEPACKAGE + ".ASM" };
     
     public static final String      JSONURL     = "http://driesgames.game-server.cc/ForgeEssentials/";
+    public static final String      LIBURL      = "http://driesgames.game-server.cc/ForgeEssentials/libs/";
+    
+    public static final String      LIBKEY      =  "UpdatorLibs";
     
     public static File              mclocation;
     public static LaunchClassLoader classLoader;
