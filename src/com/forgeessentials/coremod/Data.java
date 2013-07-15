@@ -1,0 +1,28 @@
+package com.forgeessentials.coremod;
+
+import java.io.File;
+
+import net.minecraft.launchwrapper.LaunchClassLoader;
+
+/**
+ * Most stuff can be changed here.
+ * 
+ * @author Dries007
+ * (c) Copyright  Dries007.net 2013
+ * 
+ * Written for ForgeEssentials 2, but might be useful for others.
+ */
+public class Data
+{
+    public static final String      MC_VERSION  = "1.6.2";
+    public static final String      NAME        = "FE Core";
+    
+    public static final String      BASEPACKAGE = Data.class.getPackage().getName();
+    public static final String      SETUPCLASS  = BASEPACKAGE + ".Coremod";
+    public static final String[]    ASMCLASS    = { BASEPACKAGE + ".ASM" };
+    
+    public static final String      JSONURL     = "http://driesgames.game-server.cc/ForgeEssentials/";
+    
+    public static File              mclocation;
+    public static LaunchClassLoader classLoader;
+}
