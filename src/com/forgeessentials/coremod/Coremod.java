@@ -161,84 +161,84 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                     catch (Exception e)
                     {}
                 }
+            }
 
-                /*
-                 * Get all current libs
-                 */
-                ArrayList<File> libstodelete = new ArrayList<File>();
-                for (File lib : libsFolder.listFiles())
+            /*
+             * Get all current libs
+             */
+            ArrayList<File> libstodelete = new ArrayList<File>();
+            for (File lib : libsFolder.listFiles())
+            {
+                libstodelete.add(lib);
+            }
+            
+            /*
+             * Get all wanted libs
+             */
+            for (File file : modulesFolder.listFiles())
+            {
+                if (!file.getName().endsWith(".jar")) file.delete();
+                else
                 {
-                    libstodelete.add(lib);
-                }
-                
-                /*
-                 * Get all wanted libs
-                 */
-                for (File file : modulesFolder.listFiles())
-                {
-                    if (!file.getName().endsWith(".jar")) file.delete();
-                    else
+                    System.out.println(file.getName());
+                    
+                    JarFile jar = new JarFile(file);
+                    Manifest mf = jar.getManifest();
+                    if (mf != null)
                     {
-                        System.out.println(file.getName());
-                        
-                        JarFile jar = new JarFile(file);
-                        Manifest mf = jar.getManifest();
-                        if (mf != null)
+                        String libs = mf.getMainAttributes().getValue(Data.LIBKEY);
+                        for (String lib : libs.split(";"))
                         {
-                            String libs = mf.getMainAttributes().getValue(Data.LIBKEY);
-                            for (String lib : libs.split(";"))
+                            File wannabelib = new File(libsFolder, lib);
+                            if (wannabelib.exists())
                             {
-                                File wannabelib = new File(libsFolder, lib);
-                                if (wannabelib.exists())
+                                libstodelete.remove(wannabelib);
+                            }
+                            else
+                            {
+                                try
                                 {
-                                    libstodelete.remove(wannabelib);
+                                    System.out.println("[" + Data.NAME + "] Downloading lib " + lib);
+                                    FileUtils.copyURLToFile(new URL(Data.LIBURL + lib), wannabelib);
                                 }
-                                else
-                                {
-                                    try
-                                    {
-                                        System.out.println("[" + Data.NAME + "] Downloading lib " + lib);
-                                        FileUtils.copyURLToFile(new URL(Data.LIBURL + lib), wannabelib);
-                                    }
-                                    catch (Exception e)
-                                    {}
-                                }
+                                catch (Exception e)
+                                {}
                             }
                         }
-                        jar.close();
                     }
+                    jar.close();
                 }
-                /*
-                 * Remove bad/old libs
-                 */
-                for (File lib : libstodelete)
+            }
+            /*
+             * Remove bad/old libs
+             */
+            for (File lib : libstodelete)
+            {
+                System.out.println("[" + Data.NAME + "] Removing unneeded lib " + lib.getName());
+                lib.delete();
+            }
+            
+            /*
+             * Classload libs
+             */
+            for (File lib : libsFolder.listFiles())
+            {
+                System.out.println("[" + Data.NAME + "] Loading lib " + lib.getName());
+                Data.classLoader.addURL(lib.toURI().toURL());
+            }
+            System.out.println("[" + Data.NAME + "] Lib Classloading done.");
+            
+            /*
+             * We don't want to load obf files in a deobf environment...
+             */
+            if (classLoad)
+            {
+                for (File file : modulesFolder.listFiles())
                 {
-                    System.out.println("[" + Data.NAME + "] Removing unneeded lib " + lib.getName());
-                    lib.delete();
+                    System.out.println("[" + Data.NAME + "] Loading module " + file.getName());
+                    Data.classLoader.addURL(file.toURI().toURL());
                 }
-                
-                /*
-                 * Classload libs
-                 */
-                for (File lib : libsFolder.listFiles())
-                {
-                    System.out.println("[" + Data.NAME + "] Loading lib " + lib.getName());
-                    Data.classLoader.addURL(lib.toURI().toURL());
-                }
-                System.out.println("[" + Data.NAME + "] Lib Classloading done.");
-                
-                /*
-                 * We don't want to load obf files in a deobf environment...
-                 */
-                if (classLoad)
-                {
-                    for (File file : modulesFolder.listFiles())
-                    {
-                        System.out.println("[" + Data.NAME + "] Loading module " + file.getName());
-                        Data.classLoader.addURL(file.toURI().toURL());
-                    }
-                    System.out.println("[" + Data.NAME + "] Module Classloading done.");
-                }
+                System.out.println("[" + Data.NAME + "] Module Classloading done.");
             }
             
             FileOutputStream out = new FileOutputStream(configFile);
