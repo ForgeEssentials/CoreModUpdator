@@ -44,19 +44,6 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     
     public Void call() throws Exception
     {
-        boolean classLoad = true;
-        try
-        {
-            if (Data.classLoader.findClass("net.minecraft.world.World") == null)
-            {
-                System.out.println("[" + Data.NAME + "] Running in deobf enviroment, no classloading...");
-                classLoad = true;
-            }
-        }
-        catch (Exception e)
-        {   
-            
-        }
         try
         {
             InputStreamReader reader = new InputStreamReader(new URL(Data.JSONURL + "json.php").openStream());
@@ -231,7 +218,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             /*
              * We don't want to load obf files in a deobf environment...
              */
-            if (classLoad)
+            if (!Data.indevenv)
             {
                 for (File file : modulesFolder.listFiles())
                 {
@@ -258,6 +245,11 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         if (data.containsKey("mclocation") && data.get("mclocation") != null)
         {
             Data.mclocation = (File) data.get("mclocation");
+        }
+        
+        if (data.containsKey("runtimeDeobfuscationEnabled") && data.get("runtimeDeobfuscationEnabled") != null)
+        {
+            Data.indevenv = (Boolean) data.get("runtimeDeobfuscationEnabled");
         }
         
         if (data.containsKey("classLoader") && data.get("classLoader") != null)

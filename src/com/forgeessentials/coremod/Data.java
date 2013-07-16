@@ -26,6 +26,7 @@ public class Data
     
     public static final String      LIBKEY      =  "UpdatorLibs";
     
+    public static boolean           indevenv;
     public static File              mclocation;
     public static LaunchClassLoader classLoader;
 }
