@@ -5,8 +5,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
+import java.security.MessageDigest;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -22,6 +23,9 @@ import argo.jdom.JsonNode;
 import argo.jdom.JsonRootNode;
 import argo.jdom.JsonStringNode;
 
+import com.forgeessentials.coremod.dependencies.DefaultDependency;
+import com.forgeessentials.coremod.dependencies.IDependency;
+import com.forgeessentials.coremod.dependencies.MavenDependency;
 import com.google.common.base.Strings;
 
 import cpw.mods.fml.relauncher.IFMLCallHook;
@@ -30,10 +34,7 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 /**
  * Main class, does all the real work. Look in {@link}Data to change URLs and stuff.
  * 
- * @author Dries007
- * (c) Copyright  Dries007.net 2013
- * 
- * Written for ForgeEssentials, but might be useful for others.
+ * @author Dries007 (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
  */
 @IFMLLoadingPlugin.Name(Data.NAME)
 @IFMLLoadingPlugin.MCVersion(Data.MC_VERSION)
@@ -149,60 +150,120 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                     {}
                 }
             }
-
-            /*
-             * Get all current libs
-             */
-            ArrayList<File> libstodelete = new ArrayList<File>();
-            for (File lib : libsFolder.listFiles())
-            {
-                libstodelete.add(lib);
-            }
             
             /*
-             * Get all wanted libs
+             * Map of all the normal libs we want key = filename, value = hash
              */
+            HashMap<String, IDependency> libsmap = new HashMap<String, IDependency>();
+            
             for (File file : modulesFolder.listFiles())
             {
-                if (!file.getName().endsWith(".jar")) file.delete();
+                if (!file.getName().endsWith(".jar"))
+                    file.delete();
                 else
                 {
-                    System.out.println(file.getName());
-                    
                     JarFile jar = new JarFile(file);
                     Manifest mf = jar.getManifest();
                     if (mf != null)
                     {
-                        String libs = mf.getMainAttributes().getValue(Data.LIBKEY);
-                        for (String lib : libs.split(";"))
+                        /*
+                         * Reading NORMAL libs from the modules' manifest files We want: Space sperated pairs of filename:sha1
+                         */
+                        String libs = mf.getMainAttributes().getValue(Data.NORMALLIBKEY);
+                        if (libs != null)
                         {
-                            File wannabelib = new File(libsFolder, lib);
-                            if (wannabelib.exists())
+                            for (String lib : libs.split(" "))
                             {
-                                libstodelete.remove(wannabelib);
+                                DefaultDependency dependency = new DefaultDependency(lib);
+                                libsmap.put(dependency.getFileName(), dependency);
                             }
-                            else
+                        }
+                        
+                        /*
+                         * Reading MAVEN libs from the modules' manifest files We want: the maven name
+                         */
+                        libs = mf.getMainAttributes().getValue(Data.MAVENLIBKEY);
+                        if (libs != null)
+                        {
+                            for (String lib : libs.split(" "))
                             {
-                                try
-                                {
-                                    System.out.println("[" + Data.NAME + "] Downloading lib " + lib);
-                                    FileUtils.copyURLToFile(new URL(Data.LIBURL + lib), wannabelib);
-                                }
-                                catch (Exception e)
-                                {}
+                                MavenDependency dependency = new MavenDependency(lib);
+                                libsmap.put(dependency.getFileName(), dependency);
+                            }
+                        }
+                        
+                        /*
+                         * Reading ASM classes from the modules' manifest files
+                         */
+                        String asmclasses = mf.getMainAttributes().getValue(Data.ASMKEY);
+                        if (asmclasses != null)
+                        {
+                            for (String asmclass : asmclasses.split(" "))
+                            {
+                                Data.classLoader.registerTransformer(asmclass);
+                                System.out.println("[" + Data.NAME + "] Added ASM class (" + asmclass + ") for module " + jar.getName());
                             }
                         }
                     }
                     jar.close();
                 }
             }
+            
             /*
-             * Remove bad/old libs
+             * Check all current libs
              */
-            for (File lib : libstodelete)
+            HashSet<String> usedLibs = new HashSet<String>();
+            for (IDependency dependency : libsmap.values())
             {
-                System.out.println("[" + Data.NAME + "] Removing unneeded lib " + lib.getName());
-                lib.delete();
+                File file = new File(libsFolder, dependency.getFileName());
+                if (file.exists())
+                {
+                    /*
+                     * Checksum check 1
+                     */
+                    if (!getChecksum(file).equals(dependency.getHash()))
+                    {
+                        System.out.println("[" + Data.NAME + "] Lib " + dependency.getFileName() + " had wrong hash " + dependency.getHash() + " != " + getChecksum(file));
+                        file.delete();
+                    }
+                    else
+                    {
+                        /*
+                         * All is good, next!
+                         */
+                        usedLibs.add(file.getName());
+                        continue;
+                    }
+                }
+                if (!file.exists())
+                {
+                    System.out.println("[" + Data.NAME + "] Downloading lib " + dependency.getFileName() + " from " + dependency.getDownloadURL());
+                    FileUtils.copyURLToFile(dependency.getDownloadURL(), file);
+                    /*
+                     * Checksum check 2
+                     */
+                    if (!getChecksum(file).equals(dependency.getHash()))
+                    {
+                        System.out.println("[" + Data.NAME + "] Was not able to download " + dependency.getFileName() + " from " + dependency.getDownloadURL() + " with hash " + dependency.getHash() + ". We got hash " + getChecksum(file));
+                        throw new RuntimeException();
+                    }
+                    /*
+                     * Downloaded fine. Next!
+                     */
+                    usedLibs.add(file.getName());
+                }
+            }
+            
+            /*
+             * Remove not needed libs
+             */
+            for (File file : libsFolder.listFiles())
+            {
+                if (!usedLibs.contains(file.getName()))
+                {
+                    file.delete();
+                    System.out.println("[" + Data.NAME + "] Removing not needed lib " + file.getName());
+                }
             }
             
             /*
@@ -234,7 +295,10 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            if (e instanceof RuntimeException)
+                throw new RuntimeException(e);
+            else
+                e.printStackTrace();
         }
         
         return null;
@@ -268,7 +332,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     @Override
     public String[] getASMTransformerClass()
     {
-        return Data.ASMCLASS;
+        return null;
     }
     
     @Override
@@ -281,5 +345,31 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     public String getSetupClass()
     {
         return Data.SETUPCLASS;
+    }
+    
+    public static String getChecksum(File file) throws Exception
+    {
+        MessageDigest md = MessageDigest.getInstance("SHA1");
+        FileInputStream fis = new FileInputStream(file);
+        byte[] dataBytes = new byte[1024];
+        
+        int nread = 0;
+        
+        while ((nread = fis.read(dataBytes)) != -1)
+        {
+            md.update(dataBytes, 0, nread);
+        }
+        
+        byte[] mdbytes = md.digest();
+        
+        // convert the byte to hex format
+        StringBuffer sb = new StringBuffer("");
+        for (int i = 0; i < mdbytes.length; i++)
+        {
+            sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16).substring(1));
+        }
+        fis.close();
+        
+        return sb.toString();
     }
 }
