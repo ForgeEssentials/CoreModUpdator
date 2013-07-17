@@ -32,9 +32,9 @@ import cpw.mods.fml.relauncher.IFMLCallHook;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 
 /**
- * Main class, does all the real work. Look in {@link}Data to change URLs and stuff.
+ * Main class, does all the real work. Look in {@link}Data to change URLs and stuff. (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
  * 
- * @author Dries007 (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
+ * @author Dries007
  */
 @IFMLLoadingPlugin.Name(Data.NAME)
 @IFMLLoadingPlugin.MCVersion(Data.MC_VERSION)
@@ -155,6 +155,12 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
              * Map of all the normal libs we want key = filename, value = hash
              */
             HashMap<String, IDependency> libsmap = new HashMap<String, IDependency>();
+            /*
+             * Sets for all ASM classes and ATs
+             * They get added later
+             */
+            HashSet<String> ASMClasses = new HashSet<String>();
+            HashSet<String> ATFiles = new HashSet<String>();
             
             for (File file : modulesFolder.listFiles())
             {
@@ -200,8 +206,21 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                         {
                             for (String asmclass : asmclasses.split(" "))
                             {
-                                Data.classLoader.registerTransformer(asmclass);
+                                ASMClasses.add(asmclass);
                                 System.out.println("[" + Data.NAME + "] Added ASM class (" + asmclass + ") for module " + jar.getName());
+                            }
+                        }
+                        
+                        /*
+                         * Reading AT Files from the modules' manifest files
+                         */
+                        String ats = mf.getMainAttributes().getValue(Data.ATKEY);
+                        if (ats != null)
+                        {
+                            for (String at : ats.split(" "))
+                            {
+                                ATFiles.add(at);
+                                System.out.println("[" + Data.NAME + "] Added AccessTransformer (" + at + ") for module " + jar.getName());
                             }
                         }
                     }
@@ -277,17 +296,28 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             System.out.println("[" + Data.NAME + "] Lib Classloading done.");
             
             /*
-             * We don't want to load obf files in a deobf environment...
+             * Classload modules
              */
-            if (!Data.indevenv)
+            for (File file : modulesFolder.listFiles())
             {
-                for (File file : modulesFolder.listFiles())
-                {
-                    System.out.println("[" + Data.NAME + "] Loading module " + file.getName());
-                    Data.classLoader.addURL(file.toURI().toURL());
-                }
-                System.out.println("[" + Data.NAME + "] Module Classloading done.");
+                System.out.println("[" + Data.NAME + "] Module: " + file.getName());
+                Data.classLoader.addURL(file.toURI().toURL());
             }
+            System.out.println("[" + Data.NAME + "] Module Classloading done.");
+            
+            for (String asmclass : ASMClasses)
+            {
+                System.out.println("[" + Data.NAME + "] ASM class: " + asmclass);
+                Data.classLoader.registerTransformer(asmclass);
+            }
+            System.out.println("[" + Data.NAME + "] Loading ASM classes done.");
+            
+            for (String at : ATFiles)
+            {
+                System.out.println("[" + Data.NAME + "] AT: " + at);
+                CustomAT.addTransformerMap(at);
+            }
+            System.out.println("[" + Data.NAME + "] Loading ATs done.");
             
             FileOutputStream out = new FileOutputStream(configFile);
             properties.store(out, comments);
@@ -332,7 +362,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     @Override
     public String[] getASMTransformerClass()
     {
-        return null;
+        return Data.ASMCLASSES;
     }
     
     @Override
@@ -344,7 +374,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     @Override
     public String getSetupClass()
     {
-        return Data.SETUPCLASS;
+        return this.getClass().getName();
     }
     
     public static String getChecksum(File file) throws Exception

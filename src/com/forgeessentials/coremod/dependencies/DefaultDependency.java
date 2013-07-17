@@ -5,11 +5,16 @@ import java.net.URL;
 
 import com.forgeessentials.coremod.Data;
 
+/**
+ * (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
+ * 
+ * @author Dries007
+ */
 public class DefaultDependency implements IDependency
 {
     String filename;
     String hash;
-    URL url;
+    URL    url;
     
     public DefaultDependency(String code) throws MalformedURLException
     {
@@ -18,19 +23,19 @@ public class DefaultDependency implements IDependency
         this.hash = split[1];
         this.url = new URL(Data.LIBURL + filename);
     }
-
+    
     @Override
     public String getFileName()
     {
         return filename;
     }
-
+    
     @Override
     public String getHash()
     {
         return hash;
     }
-
+    
     @Override
     public URL getDownloadURL()
     {
