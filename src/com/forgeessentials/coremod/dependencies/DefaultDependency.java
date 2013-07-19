@@ -2,6 +2,7 @@ package com.forgeessentials.coremod.dependencies;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
 import com.forgeessentials.coremod.Data;
 
@@ -40,5 +41,11 @@ public class DefaultDependency implements IDependency
     public URL getDownloadURL()
     {
         return url;
+    }
+    
+    @Override
+    public List<IDependency> getNestedDependencies()
+    {
+        return null;
     }
 }

@@ -41,7 +41,7 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
 {
     // private static final JsonFormatter JSON_FORMATTER = new PrettyJsonFormatter();
-    private static final JdomParser JSON_PARSER = new JdomParser();
+    public static final JdomParser JSON_PARSER = new JdomParser();
     
     public Void call() throws Exception
     {
@@ -156,8 +156,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
              */
             HashMap<String, IDependency> libsmap = new HashMap<String, IDependency>();
             /*
-             * Sets for all ASM classes and ATs
-             * They get added later
+             * Sets for all ASM classes and ATs They get added later
              */
             HashSet<String> ASMClasses = new HashSet<String>();
             HashSet<String> ATFiles = new HashSet<String>();
@@ -195,6 +194,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                             {
                                 MavenDependency dependency = new MavenDependency(lib);
                                 libsmap.put(dependency.getFileName(), dependency);
+                                libsmap.putAll(getDependencies(dependency));
                             }
                         }
                         
@@ -332,6 +332,19 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         }
         
         return null;
+    }
+    
+    private Map<? extends String, ? extends IDependency> getDependencies(IDependency dependency)
+    {
+        HashMap<String, IDependency> map = new HashMap<String, IDependency>();
+        
+        for (IDependency nd : dependency.getNestedDependencies())
+        {
+            map.put(nd.getFileName(), nd);
+            if (dependency.getNestedDependencies() != null && !dependency.getNestedDependencies().isEmpty()) map.putAll(getDependencies(nd));
+        }
+        
+        return map;
     }
     
     public void injectData(Map<String, Object> data)
