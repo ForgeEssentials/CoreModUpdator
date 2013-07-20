@@ -23,9 +23,9 @@ public class MavenDependency implements IDependency
     public static final String       XMLTAG_artifactId  = "artifactId";
     public static final String       XMLTAG_version     = "version";
     public static final String       XMLTAG_scope       = "scope";
-    public static final List<String> unwantedScope      = Arrays.asList("provided");
+    public static final List<String> unwantedScope      = Arrays.asList("provided", "test");
     
-    List<IDependency>                nestedDependencies = new ArrayList<IDependency>();
+    List<IDependency>                transitiveDependencies = new ArrayList<IDependency>();
     String                           filename;
     String                           hash;
     URL                              dlurl;
@@ -101,7 +101,7 @@ public class MavenDependency implements IDependency
                     
                     if (unwantedScope.contains(scope)) continue;
                     
-                    nestedDependencies.add(new MavenDependency(groupId + ":" + artifactId + ":" + version));
+                    transitiveDependencies.add(new MavenDependency(groupId + ":" + artifactId + ":" + version));
                 }
             }
             
@@ -135,8 +135,8 @@ public class MavenDependency implements IDependency
     }
     
     @Override
-    public List<IDependency> getNestedDependencies()
+    public List<IDependency> getTransitiveDependencies()
     {
-        return nestedDependencies;
+        return transitiveDependencies;
     }
 }

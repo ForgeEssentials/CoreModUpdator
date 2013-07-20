@@ -338,10 +338,10 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     {
         HashMap<String, IDependency> map = new HashMap<String, IDependency>();
         
-        for (IDependency nd : dependency.getNestedDependencies())
+        for (IDependency nd : dependency.getTransitiveDependencies())
         {
             map.put(nd.getFileName(), nd);
-            if (dependency.getNestedDependencies() != null && !dependency.getNestedDependencies().isEmpty()) map.putAll(getDependencies(nd));
+            if (dependency.getTransitiveDependencies() != null && !dependency.getTransitiveDependencies().isEmpty()) map.putAll(getDependencies(nd));
         }
         
         return map;

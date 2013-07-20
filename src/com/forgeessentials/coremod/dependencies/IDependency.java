@@ -16,5 +16,5 @@ public interface IDependency
     
     public URL getDownloadURL();
     
-    public List<IDependency> getNestedDependencies();
+    public List<IDependency> getTransitiveDependencies();
 }

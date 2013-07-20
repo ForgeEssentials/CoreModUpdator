@@ -44,7 +44,7 @@ public class DefaultDependency implements IDependency
     }
     
     @Override
-    public List<IDependency> getNestedDependencies()
+    public List<IDependency> getTransitiveDependencies()
     {
         return null;
     }
