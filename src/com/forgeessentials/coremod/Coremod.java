@@ -2,7 +2,6 @@ package com.forgeessentials.coremod;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -10,7 +9,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -26,6 +24,7 @@ import argo.jdom.JsonStringNode;
 import com.forgeessentials.coremod.dependencies.DefaultDependency;
 import com.forgeessentials.coremod.dependencies.IDependency;
 import com.forgeessentials.coremod.dependencies.MavenDependency;
+import com.forgeessentials.coremod.install.Main;
 import com.google.common.base.Strings;
 
 import cpw.mods.fml.relauncher.IFMLCallHook;
@@ -50,105 +49,70 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             InputStreamReader reader = new InputStreamReader(new URL(Data.JSONURL + "json.php").openStream());
             JsonRootNode root = JSON_PARSER.parse(reader);
             
-            File FEfolder = new File(Data.mclocation, "ForgeEssentials");
-            if (!FEfolder.exists()) FEfolder.mkdirs();
+            Main.setup();
             
-            File configFile = new File(FEfolder, "Coremod.properties");
-            if (!configFile.exists()) configFile.createNewFile();
+            /*
+             * Modules In config
+             */
+            HashMap<String, Boolean> modulesMap = new HashMap<String, Boolean>();
+            HashMap<String, URL> toDownload = new HashMap<String, URL>();
+            Main.comments += "\n# Modules" + "\n#      Default: true for all modules" + "\n#      Use this to change wich modules you want." + "\n#      Warning, If you set this to false, the module file will be removed.";
             
-            File modulesFolder = new File(FEfolder, "modules");
-            if (!modulesFolder.exists()) modulesFolder.mkdirs();
-            
-            File libsFolder = new File(FEfolder, "libs");
-            if (!libsFolder.exists()) libsFolder.mkdirs();
-            
-            FileInputStream in = new FileInputStream(configFile);
-            Properties properties = new Properties();
-            properties.load(in);
-            in.close();
-            
-            String comments = "=== READ THIS ===" + "\n# autoUpdate" + "\n#      Default: true" + "\n#      Check with the FE repo to see if there is a new version, if there is, it will be downloaded and used.";
-            if (!properties.containsKey("autoUpdate")) properties.setProperty("autoUpdate", "true");
-            boolean autoUpdate = Boolean.parseBoolean(properties.getProperty("autoUpdate"));
-            
-            if (autoUpdate)
+            JsonNode modules = root.getNode("versions").getNode(Data.MC_VERSION);
+            for (JsonStringNode module : modules.getFields().keySet())
             {
-                /*
-                 * Branch stuff
-                 */
-                comments += "\n# Branches" + "\n#      Default: stable" + "\n#      Possible values: dev, beta, stable" + "\n#      Use this to change wich kind of release you want.";
-                if (!properties.containsKey("branches")) properties.setProperty("branches", "stable");
-                String branch = properties.getProperty("branches");
-                if (!branch.equals("stable") && !branch.equals("beta") && !branch.equals("dev"))
+                String filename = null;
+                URL url = null;
+                try
                 {
-                    System.out.println("[" + Data.NAME + "] Branch '" + branch + "' not found! Reverting to default.");
-                    properties.setProperty("branches", "stable");
-                    branch = "stable";
+                    List<JsonNode> list = modules.getNode(module.getText()).getArrayNode(Main.branch);
+                    filename = list.get(0).getText();
+                    url = new URL(Data.JSONURL + list.get(1).getText());
                 }
-                
-                /*
-                 * Modules In config
-                 */
-                HashMap<String, Boolean> modulesMap = new HashMap<String, Boolean>();
-                HashMap<String, URL> toDownload = new HashMap<String, URL>();
-                comments += "\n# Modules" + "\n#      Default: true for all modules" + "\n#      Use this to change wich modules you want." + "\n#      Warning, If you set this to false, the module file will be removed.";
-                
-                JsonNode modules = root.getNode("versions").getNode(Data.MC_VERSION);
-                for (JsonStringNode module : modules.getFields().keySet())
+                catch (Exception e)
                 {
-                    String filename = null;
-                    URL url = null;
-                    try
-                    {
-                        List<JsonNode> list = modules.getNode(module.getText()).getArrayNode(branch);
-                        filename = list.get(0).getText();
-                        url = new URL(Data.JSONURL + list.get(1).getText());
-                    }
-                    catch (Exception e)
-                    {
-                        // don't need to print or warn, is checked below.
-                    }
-                    if (!Strings.isNullOrEmpty(filename))
-                    {
-                        String name = "modules." + module.getText();
-                        if (!properties.containsKey(name)) properties.setProperty(name, "true");
-                        modulesMap.put(filename, Boolean.parseBoolean(properties.getProperty(name)));
-                        toDownload.put(filename, url);
-                    }
+                    // don't need to print or warn, is checked below.
                 }
-                
-                /*
-                 * Modules In folder
-                 */
-                for (File file : modulesFolder.listFiles())
+                if (!Strings.isNullOrEmpty(filename))
                 {
-                    if (!modulesMap.containsKey(file.getName()))
-                    {
-                        file.delete();
-                    }
-                    else if (!modulesMap.get(file.getName()))
-                    {
-                        file.delete();
-                    }
-                    else
-                    {
-                        toDownload.remove(file.getName());
-                    }
+                    String name = "modules." + module.getText();
+                    if (!Main.properties.containsKey(name)) Main.properties.setProperty(name, "true");
+                    modulesMap.put(filename, Boolean.parseBoolean(Main.properties.getProperty(name)));
+                    toDownload.put(filename, url);
                 }
-                
-                /*
-                 * Downloading modules
-                 */
-                for (String name : toDownload.keySet())
+            }
+            
+            /*
+             * Modules In folder
+             */
+            for (File file : Main.modulesFolder.listFiles())
+            {
+                if (!modulesMap.containsKey(file.getName()))
                 {
-                    try
-                    {
-                        System.out.println("[" + Data.NAME + "] Downloading module " + name);
-                        FileUtils.copyURLToFile(toDownload.get(name), new File(modulesFolder, name));
-                    }
-                    catch (Exception e)
-                    {}
+                    file.delete();
                 }
+                else if (!modulesMap.get(file.getName()))
+                {
+                    file.delete();
+                }
+                else
+                {
+                    toDownload.remove(file.getName());
+                }
+            }
+            
+            /*
+             * Downloading modules
+             */
+            for (String name : toDownload.keySet())
+            {
+                try
+                {
+                    System.out.println("[" + Data.NAME + "] Downloading module " + name);
+                    FileUtils.copyURLToFile(toDownload.get(name), new File(Main.modulesFolder, name));
+                }
+                catch (Exception e)
+                {}
             }
             
             /*
@@ -161,7 +125,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             HashSet<String> ASMClasses = new HashSet<String>();
             HashSet<String> ATFiles = new HashSet<String>();
             
-            for (File file : modulesFolder.listFiles())
+            for (File file : Main.modulesFolder.listFiles())
             {
                 if (!file.getName().endsWith(".jar"))
                     file.delete();
@@ -234,7 +198,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             HashSet<String> usedLibs = new HashSet<String>();
             for (IDependency dependency : libsmap.values())
             {
-                File file = new File(libsFolder, dependency.getFileName());
+                File file = new File(Main.libsFolder, dependency.getFileName());
                 if (file.exists())
                 {
                     /*
@@ -276,7 +240,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             /*
              * Remove not needed libs
              */
-            for (File file : libsFolder.listFiles())
+            for (File file : Main.libsFolder.listFiles())
             {
                 if (!usedLibs.contains(file.getName()))
                 {
@@ -288,7 +252,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             /*
              * Classload libs
              */
-            for (File lib : libsFolder.listFiles())
+            for (File lib : Main.libsFolder.listFiles())
             {
                 System.out.println("[" + Data.NAME + "] Loading lib " + lib.getName());
                 Data.classLoader.addURL(lib.toURI().toURL());
@@ -298,7 +262,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             /*
              * Classload modules
              */
-            for (File file : modulesFolder.listFiles())
+            for (File file : Main.modulesFolder.listFiles())
             {
                 System.out.println("[" + Data.NAME + "] Module: " + file.getName());
                 Data.classLoader.addURL(file.toURI().toURL());
@@ -319,9 +283,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             }
             System.out.println("[" + Data.NAME + "] Loading ATs done.");
             
-            FileOutputStream out = new FileOutputStream(configFile);
-            properties.store(out, comments);
-            out.close();
+            Main.saveProperties();
         }
         catch (Exception e)
         {

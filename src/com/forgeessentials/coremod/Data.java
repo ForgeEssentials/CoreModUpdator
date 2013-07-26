@@ -16,8 +16,8 @@ public class Data
     
     public static final String[]    ASMCLASSES   = { CustomAT.class.getName().toString() };
     
-    public static final String      JSONURL      = "http://driesgames.game-server.cc/ForgeEssentials/";
-    public static final String      LIBURL       = "http://driesgames.game-server.cc/ForgeEssentials/libs/";
+    public static final String      JSONURL      = "http://direct.dries007.net/ForgeEssentials/";
+    public static final String      LIBURL       = "http://direct.dries007.net/ForgeEssentials/libs/";
     
     public static final String      NORMALLIBKEY = "UpdatorLibs";
     public static final String      MAVENLIBKEY  = "UpdatorMavenLibs";
