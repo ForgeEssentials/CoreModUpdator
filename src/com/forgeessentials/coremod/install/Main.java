@@ -22,6 +22,8 @@ public class Main
     public static File libsFolder;
     public static String branch;
     public static Properties properties = new Properties();
+    public static boolean autoUpdate;
+    public static boolean firstRun;
     
     public static void main(String[] args) throws Exception 
     {
@@ -67,23 +69,23 @@ public class Main
             properties.load(in);
             in.close();
             
-            if (!properties.containsKey("autoUpdate")) properties.setProperty("autoUpdate", "true");
-            boolean autoUpdate = Boolean.parseBoolean(properties.getProperty("autoUpdate"));
+            if(!properties.containsKey("firstRun")) properties.setProperty("properties", "true");
+            firstRun = Boolean.parseBoolean(properties.getProperty("firstRun"));
             
-            if (autoUpdate)
+            if (!properties.containsKey("autoUpdate")) properties.setProperty("autoUpdate", "true");
+            autoUpdate = Boolean.parseBoolean(properties.getProperty("autoUpdate"));
+            
+            /*
+             * Branch stuff
+             */
+            comments += "\n# Branch" + "\n#      Default: stable" + "\n#      Possible values: dev, beta, stable" + "\n#      Use this to change wich kind of release you want.";
+            if (!properties.containsKey("branch")) properties.setProperty("branch", "stable");
+            branch = properties.getProperty("branch");
+            if (!branch.equals("stable") && !branch.equals("beta") && !branch.equals("dev"))
             {
-                /*
-                 * Branch stuff
-                 */
-                comments += "\n# Branch" + "\n#      Default: stable" + "\n#      Possible values: dev, beta, stable" + "\n#      Use this to change wich kind of release you want.";
-                if (!properties.containsKey("branch")) properties.setProperty("branch", "stable");
-                branch = properties.getProperty("branch");
-                if (!branch.equals("stable") && !branch.equals("beta") && !branch.equals("dev"))
-                {
-                    System.out.println("[" + Data.NAME + "] Branch '" + branch + "' not found! Reverting to default.");
-                    properties.setProperty("branches", "stable");
-                    branch = "stable";
-                }
+                System.out.println("[" + Data.NAME + "] Branch '" + branch + "' not found! Reverting to default.");
+                properties.setProperty("branches", "stable");
+                branch = "stable";
             }
             
             saveProperties();
