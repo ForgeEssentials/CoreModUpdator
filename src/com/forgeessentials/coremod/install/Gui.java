@@ -6,10 +6,10 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextArea;
-import javax.swing.JCheckBox;
 
 public class Gui implements IHazOut
 {
@@ -30,6 +30,8 @@ public class Gui implements IHazOut
         frame = new JFrame();
         frame.setBounds(100, 100, 450, 300);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        frame.setTitle("FE Installer");
         
         txtOut = new JTextArea();
         frame.getContentPane().add(txtOut, BorderLayout.CENTER);
@@ -99,5 +101,6 @@ public class Gui implements IHazOut
         btnStable.setEnabled(false);
         btnBeta.setEnabled(false);
         btnDev.setEnabled(false);
+        chckbxAutoUpdate.setEnabled(false);
     }
 }
