@@ -19,6 +19,7 @@ public class Data
     public static final String      BASEURL      = "http://direct.dries007.net/ForgeEssentials/dl/";
     public static final String      JSONURL      = BASEURL + "json.php";
     public static final String      LIBURL       = BASEURL + "libs/";
+    public static final String      LOCKURL      = BASEURL + "lock.php";
     
     public static final String      NORMALLIBKEY = "UpdatorLibs";
     public static final String      MAVENLIBKEY  = "UpdatorMavenLibs";

@@ -8,9 +8,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 
 import net.minecraft.launchwrapper.LaunchClassLoader;
 
@@ -72,19 +75,19 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         {
             online = false;
             System.out.println("[" + Data.NAME + "] JSON offline? Check manually: " + Data.JSONURL);
-            System.out.println("[" + Data.NAME + "] ##############################################################");
-            System.out.println("[" + Data.NAME + "] #####       WARNING: The update URL is unavailable.      #####");
-            System.out.println("[" + Data.NAME + "] #####           Only classloading will be done!          #####");
-            System.out.println("[" + Data.NAME + "] ##############################################################");
+            System.out.println("[" + Data.NAME + "] ###################################################");
+            System.out.println("[" + Data.NAME + "] ##### WARNING: The update URL is unavailable. #####");
+            System.out.println("[" + Data.NAME + "] #####     Only classloading will be done!     #####");
+            System.out.println("[" + Data.NAME + "] ###################################################");
         }
         catch (InvalidSyntaxException e)
         {
             online = false;
             System.out.println("[" + Data.NAME + "] Invalid JSON at target? Check manually: " + Data.JSONURL);
-            System.out.println("[" + Data.NAME + "] ##############################################################");
-            System.out.println("[" + Data.NAME + "] #####         WARNING: The update URL is corrupt.        #####");
-            System.out.println("[" + Data.NAME + "] #####           Only classloading will be done!          #####");
-            System.out.println("[" + Data.NAME + "] ##############################################################");
+            System.out.println("[" + Data.NAME + "] ###############################################");
+            System.out.println("[" + Data.NAME + "] ##### WARNING: The update URL is corrupt. #####");
+            System.out.println("[" + Data.NAME + "] #####   Only classloading will be done!   #####");
+            System.out.println("[" + Data.NAME + "] ###############################################");
         }
         
         Main.setup();
@@ -105,6 +108,28 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         
         if (online)
         {
+            try
+            {
+                if (!Main.properties.containsKey("betaKey")) Main.properties.put("betaKey", "");
+                Scanner s = new Scanner(new URL(Data.LOCKURL + "?key=" + Main.properties.getProperty("betaKey")).openStream(), "UTF-8");
+                List<String> authBranches = Arrays.asList(s.useDelimiter("\\A").next().split(";"));
+                s.close();
+                if (!authBranches.contains(Main.branch))
+                {
+                    Main.branch = authBranches.get(authBranches.size() - 1);
+                    System.out.println("[" + Data.NAME + "] ################################################################");
+                    System.out.println("[" + Data.NAME + "] #####  WARNING: You are using a non autenticated branch.   #####");
+                    System.out.println("[" + Data.NAME + "] #####        Enter your betaKey in the config file!        #####");
+                    System.out.println("[" + Data.NAME + "] #####             Will revert back to '" + Main.branch + "'.            #####");
+                    System.out.println("[" + Data.NAME + "] ################################################################");
+                }
+            }
+            catch (Exception e)
+            {
+                System.out.println("[" + Data.NAME + "] Invalid JSON at target? Check manually: " + Data.LOCKURL + "?key=" + Main.properties.getProperty("betaKey"));
+                System.out.println("[" + Data.NAME + "] Could not verify the branch key.");
+                e.printStackTrace();
+            }
             HashSet<File> wantedModuleFiles = new HashSet<File>();
             HashSet<IDependency> wantedDepencies = new HashSet<IDependency>();
             JsonNode modules = root.getNode("modules");
