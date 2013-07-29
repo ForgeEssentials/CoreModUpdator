@@ -12,18 +12,19 @@ import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
 /**
- * Added by request of AbrarSyed (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
+ * Added by request of AbrarSyed (c) Copyright Dries007.net 2013 Written for
+ * ForgeEssentials, but might be useful for others.
  * 
  * @author Dries007
  */
 public class MavenDependency implements IDependency
 {
-    public static final String       XMLTAG_dependency  = "dependency";
-    public static final String       XMLTAG_groupId     = "groupId";
-    public static final String       XMLTAG_artifactId  = "artifactId";
-    public static final String       XMLTAG_version     = "version";
-    public static final String       XMLTAG_scope       = "scope";
-    public static final List<String> unwantedScope      = Arrays.asList("provided", "test");
+    public static final String       XMLTAG_dependency      = "dependency";
+    public static final String       XMLTAG_groupId         = "groupId";
+    public static final String       XMLTAG_artifactId      = "artifactId";
+    public static final String       XMLTAG_version         = "version";
+    public static final String       XMLTAG_scope           = "scope";
+    public static final List<String> unwantedScope          = Arrays.asList("provided", "test");
     
     List<IDependency>                transitiveDependencies = new ArrayList<IDependency>();
     String                           filename;

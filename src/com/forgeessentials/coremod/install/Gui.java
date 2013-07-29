@@ -13,12 +13,12 @@ import javax.swing.JTextArea;
 
 public class Gui implements IHazOut
 {
-    private JFrame frame;
+    private JFrame    frame;
     private JTextArea txtOut;
-    private JButton btnStable;
-    private JButton btnBeta;
-    private JButton btnDev;
-    private JButton btnClose;
+    private JButton   btnStable;
+    private JButton   btnBeta;
+    private JButton   btnDev;
+    private JButton   btnClose;
     private JCheckBox chckbxAutoUpdate;
     
     /**
@@ -41,15 +41,19 @@ public class Gui implements IHazOut
         panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         
         btnStable = new JButton("Stable");
-        btnStable.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        btnStable.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent e)
+            {
                 Main.setBranch("Stable");
             }
         });
         
         chckbxAutoUpdate = new JCheckBox("autoUpdate");
-        chckbxAutoUpdate.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        chckbxAutoUpdate.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent e)
+            {
                 Main.setAutoUpdate(chckbxAutoUpdate.isSelected());
             }
         });
@@ -58,43 +62,49 @@ public class Gui implements IHazOut
         panel.add(btnStable);
         
         btnBeta = new JButton("Beta");
-        btnBeta.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        btnBeta.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent e)
+            {
                 Main.setBranch("Beta");
             }
         });
         panel.add(btnBeta);
         
         btnDev = new JButton("Dev");
-        btnDev.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        btnDev.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent e)
+            {
                 Main.setBranch("Dev");
             }
         });
         panel.add(btnDev);
         
         btnClose = new JButton("Close");
-        btnClose.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
+        btnClose.addActionListener(new ActionListener()
+        {
+            public void actionPerformed(ActionEvent e)
+            {
                 System.exit(0);
             }
         });
         panel.add(btnClose);
         frame.setVisible(true);
     }
-
+    
     @Override
     public void print(Object o)
     {
         txtOut.setText(txtOut.getText() + o.toString());
     }
-
+    
     @Override
     public void println(Object o)
     {
         txtOut.setText(txtOut.getText() + o.toString() + "\n");
     }
-
+    
     @Override
     public void stop()
     {

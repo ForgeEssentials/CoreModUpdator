@@ -3,7 +3,8 @@ package com.forgeessentials.coremod;
 import net.minecraft.launchwrapper.LaunchClassLoader;
 
 /**
- * Most stuff can be changed here. (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
+ * Most stuff can be changed here. (c) Copyright Dries007.net 2013 Written for
+ * ForgeEssentials, but might be useful for others.
  * 
  * @author Dries007
  */
@@ -24,6 +25,6 @@ public class Data
     public static final String      ASMKEY       = "UpdatorASMClasses";
     public static final String      ATKEY        = "UpdatorATs";
     
-    public static boolean           debug = false;
+    public static boolean           debug        = false;
     public static LaunchClassLoader classLoader;
 }

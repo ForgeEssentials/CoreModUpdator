@@ -7,6 +7,7 @@ public class NoGui implements IHazOut
 {
     
     static BufferedReader read;
+    
     public void init() throws Exception
     {
         read = new BufferedReader(new InputStreamReader(System.in));
@@ -34,7 +35,7 @@ public class NoGui implements IHazOut
                 case 1:
                     Main.setAutoUpdate(false);
                     break;
-                default :
+                default:
                     System.out.println("That is not a valid choise.");
                     autoUpdate();
             }
@@ -68,7 +69,7 @@ public class NoGui implements IHazOut
                 case 2:
                     Main.setBranch("dev");
                     break;
-                default :
+                default:
                     System.out.println("That is not a valid choise.");
                     branchMenu();
             }
@@ -79,19 +80,19 @@ public class NoGui implements IHazOut
             branchMenu();
         }
     }
-
+    
     @Override
     public void print(Object o)
     {
         System.out.print(o);
     }
-
+    
     @Override
     public void println(Object o)
     {
         System.out.println(o);
     }
-
+    
     @Override
     public void stop()
     {

@@ -11,23 +11,25 @@ import com.forgeessentials.coremod.Data;
 
 public class Main
 {
-    static IHazOut out;
+    static IHazOut           out;
     
-    public static String comments = "=== READ THIS ===" + "\n# autoUpdate" + "\n#      Default: true" + "\n#      Check with the FE repo to see if there is a new version, if there is, it will be downloaded and used.";
-    public static File mclocation;
-    public static File FEfolder;
-    public static File configFile;
-    public static File modulesFolder;
-    public static File libsFolder;
-    public static String branch;
+    public static String     comments   = "=== READ THIS ===" + "\n# autoUpdate" + "\n#      Default: true" + "\n#      Check with the FE repo to see if there is a new version, if there is, it will be downloaded and used.";
+    public static File       mclocation;
+    public static File       FEfolder;
+    public static File       configFile;
+    public static File       modulesFolder;
+    public static File       dependencyFolder;
+    public static String     branch;
     public static Properties properties = new Properties();
-    public static boolean autoUpdate;
-    public static boolean firstRun;
+    public static boolean    autoUpdate;
+    public static boolean    firstRun;
     
-    public static void main(String[] args) throws Exception 
+    public static void main(String[] args) throws Exception
     {
-        if (GraphicsEnvironment.isHeadless()) out = new NoGui();
-        else out = new Gui();
+        if (GraphicsEnvironment.isHeadless())
+            out = new NoGui();
+        else
+            out = new Gui();
         out.init();
         out.println("Welcome to the ForgeEssentials installer.");
         out.println("=========================================");
@@ -41,9 +43,10 @@ public class Main
         out.println("End of the ForgeEssentials installer.");
         out.println("The actual dowloading of the modules and libs will happen the first Minecraft launch.");
     }
-
+    
     /**
      * Makes settings file and does folder structure.
+     * 
      * @throws IOException
      */
     public static void setup() throws IOException
@@ -68,14 +71,14 @@ public class Main
             modulesFolder = new File(FEfolder, "modules");
             if (!modulesFolder.exists()) modulesFolder.mkdirs();
             
-            libsFolder = new File(FEfolder, "libs");
-            if (!libsFolder.exists()) libsFolder.mkdirs();
+            dependencyFolder = new File(FEfolder, "dependency");
+            if (!dependencyFolder.exists()) dependencyFolder.mkdirs();
             
             FileInputStream in = new FileInputStream(configFile);
             properties.load(in);
             in.close();
             
-            if(!properties.containsKey("firstRun")) properties.setProperty("firstRun", "true");
+            if (!properties.containsKey("firstRun")) properties.setProperty("firstRun", "true");
             firstRun = Boolean.parseBoolean(properties.getProperty("firstRun"));
             
             if (!properties.containsKey("autoUpdate")) properties.setProperty("autoUpdate", "true");
@@ -104,7 +107,7 @@ public class Main
         properties.store(out, Main.comments);
         out.close();
     }
-
+    
     public static void setBranch(String branch)
     {
         properties.setProperty("branch", branch.toLowerCase());

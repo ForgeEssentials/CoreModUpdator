@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -17,15 +16,14 @@ import com.forgeessentials.coremod.dependencies.IDependency;
 import com.forgeessentials.coremod.dependencies.MavenDependency;
 
 public class Module
-{   
-    public String name;
+{
+    public String                name;
     // MUST only conain .jar files!
-    public ArrayList<ModuleFile> files = new ArrayList<ModuleFile>();
-    public boolean wanted;
+    public ArrayList<ModuleFile> files       = new ArrayList<ModuleFile>();
     
-    public HashMap<String, IDependency> dependecies = new HashMap<String, IDependency>();
-    public HashSet<String> ASMClasses = new HashSet<String>();
-    public HashSet<String> ATFiles = new HashSet<String>();
+    public HashSet<IDependency>  dependecies = new HashSet<IDependency>();
+    public HashSet<String>       ASMClasses  = new HashSet<String>();
+    public HashSet<String>       ATFiles     = new HashSet<String>();
     
     public Module(String name)
     {
@@ -36,15 +34,14 @@ public class Module
     {
         files.add(new ModuleFile(file, null, null));
         this.name = file.getName();
-        this.wanted = true;
     }
     
     /**
-     * This method gets all the dependencies, ASM classes and ATs from the files associated with this module.
+     * This method gets all the dependencies, ASM classes and ATs from the files
+     * associated with this module.
      */
     public void parceJarFiles()
     {
-        if (!wanted) return;
         for (ModuleFile mFile : files)
         {
             try
@@ -54,7 +51,8 @@ public class Module
                 if (mf != null)
                 {
                     /*
-                     * Reading NORMAL libs from the modules' manifest files We want: Space sperated pairs of filename:sha1
+                     * Reading NORMAL libs from the modules' manifest files We
+                     * want: Space sperated pairs of filename:sha1
                      */
                     String libs = mf.getMainAttributes().getValue(Data.NORMALLIBKEY);
                     if (libs != null)
@@ -62,11 +60,12 @@ public class Module
                         for (String lib : libs.split(" "))
                         {
                             DefaultDependency dependency = new DefaultDependency(lib);
-                            dependecies.put(dependency.getFileName(), dependency);
+                            dependecies.add(dependency);
                         }
                     }
                     /*
-                     * Reading MAVEN libs from the modules' manifest files We want: the maven name
+                     * Reading MAVEN libs from the modules' manifest files We
+                     * want: the maven name
                      */
                     libs = mf.getMainAttributes().getValue(Data.MAVENLIBKEY);
                     if (libs != null)
@@ -74,8 +73,8 @@ public class Module
                         for (String lib : libs.split(" "))
                         {
                             MavenDependency dependency = new MavenDependency(lib);
-                            dependecies.put(dependency.getFileName(), dependency);
-                            dependecies.putAll(Coremod.getDependencies(dependency));
+                            dependecies.add(dependency);
+                            dependecies.addAll(Coremod.getDependencies(dependency));
                         }
                     }
                     
@@ -119,13 +118,13 @@ public class Module
     }
     
     /**
-     * Check to see if all module files exist.
-     * Checks hash, downloads new one if necessary.
-     * @throws IOException 
+     * Check to see if all module files exist. Checks hash, downloads new one if
+     * necessary.
+     * 
+     * @throws IOException
      */
     public void checkJarFiles() throws IOException
     {
-        if (!wanted) return;
         for (ModuleFile mFile : files)
         {
             String sum;
@@ -148,8 +147,8 @@ public class Module
     
     public static class ModuleFile
     {
-        public File file;
-        public URL url;
+        public File   file;
+        public URL    url;
         public String hash;
         
         public ModuleFile(File file, URL url, String hash)

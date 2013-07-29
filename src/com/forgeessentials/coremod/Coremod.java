@@ -10,7 +10,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 
 import net.minecraft.launchwrapper.LaunchClassLoader;
@@ -26,13 +25,14 @@ import argo.saj.InvalidSyntaxException;
 import com.forgeessentials.coremod.Module.ModuleFile;
 import com.forgeessentials.coremod.dependencies.IDependency;
 import com.forgeessentials.coremod.install.Main;
-import com.google.common.base.Strings;
 
 import cpw.mods.fml.relauncher.IFMLCallHook;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 
 /**
- * Main class, does all the real work. Look in {@link}Data to change URLs and stuff. (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
+ * Main class, does all the real work. Look in {@link}Data to change URLs and
+ * stuff. (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might
+ * be useful for others.
  * 
  * @author Dries007
  */
@@ -41,22 +41,14 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
 {
     public static final JdomParser JSON_PARSER = new JdomParser();
-    public static boolean online;
+    public static boolean          online;
     
-    JsonRootNode root;
+    JsonRootNode                   root;
     
     /*
      * Map with all modules
      */
-    HashMap<String, Module> moduleMap = new HashMap<String, Module>();
-    
-    //HashMap<String, Boolean> modulesMap = new HashMap<String, Boolean>();
-    //HashMap<String, URL> toDownload = new HashMap<String, URL>();
-    // Map of all the normal libs we want key = filename, value = hash
-    //HashMap<String, IDependency> libsmap = new HashMap<String, IDependency>();
-    // Sets for all ASM classes and ATs They get added later
-    //HashSet<String> ASMClasses = new HashSet<String>();
-    //HashSet<String> ATFiles = new HashSet<String>();
+    HashMap<String, Module>        moduleMap   = new HashMap<String, Module>();
     
     public Void call() throws IOException
     {
@@ -68,7 +60,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             /*
              * Version check
              */
-            if (!root.getNode("CoreMod").getStringValue(Data.MC_VERSION).equals(Data.VERSION))
+            if (!root.getStringValue("CoreMod", Data.MC_VERSION).equals(Data.VERSION))
             {
                 System.out.println("[" + Data.NAME + "] ##############################################################");
                 System.out.println("[" + Data.NAME + "] ##### WARNING: The version you are using is out of date. #####");
@@ -96,7 +88,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         }
         
         Main.setup();
-
+        
         // We need a valid JSON for first boot.
         if (Main.firstRun && !online)
         {
@@ -105,7 +97,8 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         }
         
         // Status message
-        if (Main.firstRun) System.out.println("[" + Data.NAME + "] Doing a full first run.");
+        if (Main.firstRun)
+            System.out.println("[" + Data.NAME + "] Doing a full first run.");
         else if (!Main.autoUpdate) System.out.println("[" + Data.NAME + "] You are NOT using autoupdate. We will only check dependencies and classload.");
         
         Main.properties.setProperty("firstRun", "false");
@@ -113,44 +106,86 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         if (online)
         {
             HashSet<File> wantedModuleFiles = new HashSet<File>();
+            HashSet<IDependency> wantedDepencies = new HashSet<IDependency>();
             JsonNode modules = root.getNode("modules");
             for (JsonStringNode key : modules.getFields().keySet())
             {
-                String moduleName = key.toString();
-                Module module = new Module(moduleName);
+                String moduleName = key.getText();
                 
                 if (!Main.properties.containsKey("module." + moduleName)) Main.properties.put("module." + moduleName, "true");
-                module.wanted = Boolean.parseBoolean(Main.properties.getProperty("module." + moduleName));
-                
-                /*
-                 * Add files the JSON sais we need
-                 */
-                for (JsonNode fileNode : modules.getNode(key).getArrayNode(Data.MC_VERSION))
+                if (Boolean.parseBoolean(Main.properties.getProperty("module." + moduleName)))
                 {
-                    File f = new File(Main.modulesFolder, fileNode.getStringValue("file"));
-                    if (module.wanted) wantedModuleFiles.add(f);
-                    module.files.add(new ModuleFile(f, new URL (Data.BASEURL + fileNode.getStringValue("url")), fileNode.getStringValue("hash")));
+                    Module module = new Module(moduleName);
+                    /*
+                     * Add files the JSON sais we need
+                     */
+                    for (JsonNode fileNode : modules.getArrayNode(moduleName, Data.MC_VERSION, Main.branch))
+                    {
+                        File f = new File(Main.modulesFolder, fileNode.getStringValue("file"));
+                        wantedModuleFiles.add(f);
+                        module.files.add(new ModuleFile(f, new URL(Data.BASEURL + fileNode.getStringValue("url")), fileNode.getStringValue("hash")));
+                    }
+                    
+                    /*
+                     * Check to see if said files exist
+                     */
+                    module.checkJarFiles();
+                    
+                    /*
+                     * Parse the modules jar files for interesting things
+                     */
+                    module.parceJarFiles();
+                    
+                    wantedDepencies.addAll(module.dependecies);
+                    
+                    moduleMap.put(module.name, module);
                 }
-                
-                /*
-                 * Check to see if said files exist
-                 */
-                module.checkJarFiles();
-                
-                /*
-                 * Parse the modules jar files for interesting things
-                 */
-                module.parceJarFiles();
-                
-                moduleMap.put(module.name, module);
                 
                 /*
                  * Removing all non needed module files
                  */
                 for (File file : Main.modulesFolder.listFiles())
                 {
-                    if (!wantedModuleFiles.contains(file)) file.delete();
+                    if (wantedModuleFiles.contains(file)) continue;
+                    
+                    file.delete();
+                    System.out.println("[" + Data.NAME + "] Removing not needed module file " + file.getName());
                 }
+            }
+            
+            HashSet<String> usedDependencys = new HashSet<String>();
+            for (IDependency dependency : wantedDepencies)
+            {
+                File file = new File(Main.dependencyFolder, dependency.getFileName());
+                if (file.exists())
+                {
+                    if (!getChecksum(file).equals(dependency.getHash()))
+                    {
+                        System.out.println("[" + Data.NAME + "] Lib " + dependency.getFileName() + " had wrong hash " + dependency.getHash() + " != " + getChecksum(file));
+                        file.delete();
+                    }
+                    else
+                    {
+                        usedDependencys.add(file.getName());
+                    }
+                }
+                if (!file.exists())
+                {
+                    System.out.println("[" + Data.NAME + "] Downloading lib " + dependency.getFileName() + " from " + dependency.getDownloadURL());
+                    FileUtils.copyURLToFile(dependency.getDownloadURL(), file);
+                    usedDependencys.add(file.getName());
+                }
+            }
+            
+            /*
+             * Remove not needed dependencies
+             */
+            for (File file : Main.dependencyFolder.listFiles())
+            {
+                if (usedDependencys.contains(file.getName())) continue;
+                
+                file.delete();
+                System.out.println("[" + Data.NAME + "] Removing not needed dependency " + file.getName());
             }
         }
         else
@@ -160,7 +195,8 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
              */
             for (File file : Main.modulesFolder.listFiles())
             {
-                if (!file.getName().endsWith(".jar")) file.delete();
+                if (!file.getName().endsWith(".jar"))
+                    file.delete();
                 else
                 {
                     Module m = new Module(file);
@@ -168,165 +204,36 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                     moduleMap.put(m.name, m);
                 }
             }
-            
-            classloadAll();
         }
+        
+        classloadAll();
         
         Main.saveProperties();
         return null;
     }
-
+    
     /**
      * Returns nested dependencies
+     * 
      * @param dependency
      * @return
      */
-    public static Map<? extends String, ? extends IDependency> getDependencies(IDependency dependency)
+    public static HashSet<? extends IDependency> getDependencies(IDependency dependency)
     {
-        HashMap<String, IDependency> map = new HashMap<String, IDependency>();
+        HashSet<IDependency> set = new HashSet<IDependency>();
         
         for (IDependency nd : dependency.getTransitiveDependencies())
         {
-            map.put(nd.getFileName(), nd);
-            if (dependency.getTransitiveDependencies() != null && !dependency.getTransitiveDependencies().isEmpty()) map.putAll(getDependencies(nd));
+            set.add(nd);
+            if (dependency.getTransitiveDependencies() != null && !dependency.getTransitiveDependencies().isEmpty()) set.addAll(getDependencies(nd));
         }
         
-        return map;
-    }
-    
-    /**
-     * Gets all modules from JSON.
-     * Looks in config to see which modules we want.
-     * Downloads modules we want but don't have or downloads updated versions.
-     * Removes modules we don't want.
-     */
-    public void getModules()
-    {
-        Main.comments += "\n# Modules" + "\n#      Default: true for all modules" + "\n#      Use this to change wich modules you want." + "\n#      Warning, If you set this to false, the module file will be removed.";
-        
-        /*
-         * Modules In config
-         */
-        JsonNode modules = root.getNode("versions").getNode(Data.MC_VERSION);
-        for (JsonStringNode module : modules.getFields().keySet())
-        {
-            String filename = null;
-            URL url = null;
-            try
-            {
-                List<JsonNode> list = modules.getNode(module.getText()).getArrayNode(Main.branch);
-                filename = list.get(0).getText();
-                url = new URL(Data.BASEURL + list.get(1).getText());
-            }
-            catch (Exception e)
-            {
-                // don't need to print or warn, is checked below.
-            }
-            if (!Strings.isNullOrEmpty(filename))
-            {
-                String name = "modules." + module.getText();
-                if (!Main.properties.containsKey(name)) Main.properties.setProperty(name, "true");
-                modulesMap.put(filename, Boolean.parseBoolean(Main.properties.getProperty(name)));
-                toDownload.put(filename, url);
-            }
-        }
-        
-        /*
-         * Modules In folder
-         */
-        for (File file : Main.modulesFolder.listFiles())
-        {
-            if (!modulesMap.containsKey(file.getName()))
-            {
-                file.delete();
-            }
-            else if (!modulesMap.get(file.getName()))
-            {
-                file.delete();
-            }
-            else
-            {
-                toDownload.remove(file.getName());
-            }
-        }
-        
-        /*
-         * Downloading modules
-         */
-        for (String name : toDownload.keySet())
-        {
-            try
-            {
-                System.out.println("[" + Data.NAME + "] Downloading module " + name);
-                FileUtils.copyURLToFile(toDownload.get(name), new File(Main.modulesFolder, name));
-            }
-            catch (Exception e)
-            {}
-        }
-    }
-    
-    public void getDependencies() throws Exception
-    {
-        /*
-         * Check all current libs
-         */
-        HashSet<String> usedLibs = new HashSet<String>();
-        for (IDependency dependency : libsmap.values())
-        {
-            File file = new File(Main.libsFolder, dependency.getFileName());
-            if (file.exists())
-            {
-                /*
-                 * Checksum check 1
-                 */
-                if (!getChecksum(file).equals(dependency.getHash()))
-                {
-                    System.out.println("[" + Data.NAME + "] Lib " + dependency.getFileName() + " had wrong hash " + dependency.getHash() + " != " + getChecksum(file));
-                    file.delete();
-                }
-                else
-                {
-                    /*
-                     * All is good, next!
-                     */
-                    usedLibs.add(file.getName());
-                    continue;
-                }
-            }
-            if (!file.exists())
-            {
-                System.out.println("[" + Data.NAME + "] Downloading lib " + dependency.getFileName() + " from " + dependency.getDownloadURL());
-                FileUtils.copyURLToFile(dependency.getDownloadURL(), file);
-                /*
-                 * Checksum check 2
-                 */
-                if (!getChecksum(file).equals(dependency.getHash()))
-                {
-                    System.out.println("[" + Data.NAME + "] Was not able to download " + dependency.getFileName() + " from " + dependency.getDownloadURL() + " with hash " + dependency.getHash() + ". We got hash " + getChecksum(file));
-                    throw new RuntimeException();
-                }
-                /*
-                 * Downloaded fine. Next!
-                 */
-                usedLibs.add(file.getName());
-            }
-        }
-        
-        /*
-         * Remove not needed libs
-         */
-        for (File file : Main.libsFolder.listFiles())
-        {
-            if (!usedLibs.contains(file.getName()))
-            {
-                file.delete();
-                System.out.println("[" + Data.NAME + "] Removing not needed lib " + file.getName());
-            }
-        }
+        return set;
     }
     
     /**
      * Classloads all of the things!
+     * 
      * @throws MalformedURLException
      */
     public void classloadAll() throws MalformedURLException
@@ -335,10 +242,10 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         {
             System.out.println("[" + Data.NAME + "] Module " + m.name + " adds:");
             
-            for (String fileName : m.dependecies.keySet())
+            for (IDependency dependency : m.dependecies)
             {
-                System.out.println("[" + Data.NAME + "] Dependency: " + fileName);
-                Data.classLoader.addURL(new File(Main.libsFolder, fileName).toURI().toURL());
+                System.out.println("[" + Data.NAME + "] Dependency: " + dependency.getFileName());
+                Data.classLoader.addURL(new File(Main.dependencyFolder, dependency.getFileName()).toURI().toURL());
             }
             
             for (ModuleFile mf : m.files)

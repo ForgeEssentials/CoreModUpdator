@@ -8,7 +8,8 @@ import java.util.List;
 import cpw.mods.fml.common.asm.transformers.AccessTransformer;
 
 /**
- * Thank ChickenBones for this one. (CodeChickenCore/codechicken/core/asm/CodeChickenAccessTransformer.java)
+ * Thank ChickenBones for this one.
+ * (CodeChickenCore/codechicken/core/asm/CodeChickenAccessTransformer.java)
  * 
  * @author Dries007
  */
