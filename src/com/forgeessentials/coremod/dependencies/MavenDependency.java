@@ -9,11 +9,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 
 /**
- * Added by request of AbrarSyed (c) Copyright Dries007.net 2013 Written for
- * ForgeEssentials, but might be useful for others.
+ * Added by request of AbrarSyed (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
  * 
  * @author Dries007
  */
@@ -31,28 +31,28 @@ public class MavenDependency implements IDependency
     String                           hash;
     URL                              dlurl;
     
-    public MavenDependency(String name) throws IOException
+    public MavenDependency(final String name) throws IOException
     {
-        String[] split = name.split(":");
-        filename = split[1] + '-' + split[2];
-        dlurl = new URL("http://repo1.maven.org/maven2/" + split[0].replace('.', '/') + '/' + split[1] + '/' + split[2] + '/' + filename + ".jar");
+        final String[] split = name.split(":");
+        this.filename = split[1] + '-' + split[2];
+        this.dlurl = new URL("http://repo1.maven.org/maven2/" + split[0].replace('.', '/') + '/' + split[1] + '/' + split[2] + '/' + this.filename + ".jar");
         
-        BufferedReader in = new BufferedReader(new InputStreamReader(new URL(dlurl + ".sha1").openStream()));
-        hash = in.readLine();
+        final BufferedReader in = new BufferedReader(new InputStreamReader(new URL(this.dlurl + ".sha1").openStream()));
+        this.hash = in.readLine();
         in.close();
         
-        if (hash.contains("  ")) hash = hash.split(" ", 2)[0];
+        if (this.hash.contains("  ")) this.hash = this.hash.split(" ", 2)[0];
         
         try
         {
-            URL pomurl = new URL("http://repo1.maven.org/maven2/" + split[0].replace('.', '/') + '/' + split[1] + '/' + split[2] + '/' + filename + ".pom");
-            XMLInputFactory inputFactory = XMLInputFactory.newInstance();
-            XMLStreamReader reader = inputFactory.createXMLStreamReader(pomurl.openStream());
+            final URL pomurl = new URL("http://repo1.maven.org/maven2/" + split[0].replace('.', '/') + '/' + split[1] + '/' + split[2] + '/' + this.filename + ".pom");
+            final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
+            final XMLStreamReader reader = inputFactory.createXMLStreamReader(pomurl.openStream());
             
             while (reader.hasNext())
             {
                 reader.next();
-                if (reader.getEventType() == XMLStreamReader.START_ELEMENT && reader.getName().getLocalPart().equals(XMLTAG_dependency))
+                if (reader.getEventType() == XMLStreamConstants.START_ELEMENT && reader.getName().getLocalPart().equals(MavenDependency.XMLTAG_dependency))
                 {
                     /*
                      * Got a dependency
@@ -62,53 +62,51 @@ public class MavenDependency implements IDependency
                     {
                         reader.next();
                         
-                        if (reader.getEventType() == XMLStreamReader.END_ELEMENT && reader.getName().getLocalPart().equals(XMLTAG_dependency))
-                        {
+                        if (reader.getEventType() == XMLStreamConstants.END_ELEMENT && reader.getName().getLocalPart().equals(MavenDependency.XMLTAG_dependency))
                             break;
-                        }
-                        else if (reader.getEventType() == XMLStreamReader.START_ELEMENT && reader.getName().getLocalPart().equals(XMLTAG_groupId))
+                        else if (reader.getEventType() == XMLStreamConstants.START_ELEMENT && reader.getName().getLocalPart().equals(MavenDependency.XMLTAG_groupId))
                         {
-                            while (reader.next() != XMLStreamReader.CHARACTERS)
+                            while (reader.next() != XMLStreamConstants.CHARACTERS)
                             {}
                             groupId = reader.getText();
-                            while (reader.next() != XMLStreamReader.END_ELEMENT)
+                            while (reader.next() != XMLStreamConstants.END_ELEMENT)
                             {}
                         }
-                        else if (reader.getEventType() == XMLStreamReader.START_ELEMENT && reader.getName().getLocalPart().equals(XMLTAG_artifactId))
+                        else if (reader.getEventType() == XMLStreamConstants.START_ELEMENT && reader.getName().getLocalPart().equals(MavenDependency.XMLTAG_artifactId))
                         {
-                            while (reader.next() != XMLStreamReader.CHARACTERS)
+                            while (reader.next() != XMLStreamConstants.CHARACTERS)
                             {}
                             artifactId = reader.getText();
-                            while (reader.next() != XMLStreamReader.END_ELEMENT)
+                            while (reader.next() != XMLStreamConstants.END_ELEMENT)
                             {}
                         }
-                        else if (reader.getEventType() == XMLStreamReader.START_ELEMENT && reader.getName().getLocalPart().equals(XMLTAG_version))
+                        else if (reader.getEventType() == XMLStreamConstants.START_ELEMENT && reader.getName().getLocalPart().equals(MavenDependency.XMLTAG_version))
                         {
-                            while (reader.next() != XMLStreamReader.CHARACTERS)
+                            while (reader.next() != XMLStreamConstants.CHARACTERS)
                             {}
                             version = reader.getText();
-                            while (reader.next() != XMLStreamReader.END_ELEMENT)
+                            while (reader.next() != XMLStreamConstants.END_ELEMENT)
                             {}
                         }
-                        else if (reader.getEventType() == XMLStreamReader.START_ELEMENT && reader.getName().getLocalPart().equals(XMLTAG_scope))
+                        else if (reader.getEventType() == XMLStreamConstants.START_ELEMENT && reader.getName().getLocalPart().equals(MavenDependency.XMLTAG_scope))
                         {
-                            while (reader.next() != XMLStreamReader.CHARACTERS)
+                            while (reader.next() != XMLStreamConstants.CHARACTERS)
                             {}
                             scope = reader.getText();
-                            while (reader.next() != XMLStreamReader.END_ELEMENT)
+                            while (reader.next() != XMLStreamConstants.END_ELEMENT)
                             {}
                         }
                     }
                     
-                    if (unwantedScope.contains(scope)) continue;
+                    if (MavenDependency.unwantedScope.contains(scope)) continue;
                     
-                    transitiveDependencies.add(new MavenDependency(groupId + ":" + artifactId + ":" + version));
+                    this.transitiveDependencies.add(new MavenDependency(groupId + ":" + artifactId + ":" + version));
                 }
             }
             
             reader.close();
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             if (e instanceof RuntimeException)
                 throw new RuntimeException(e);
@@ -120,24 +118,24 @@ public class MavenDependency implements IDependency
     @Override
     public String getFileName()
     {
-        return filename + ".jar";
+        return this.filename + ".jar";
     }
     
     @Override
     public String getHash()
     {
-        return hash;
+        return this.hash;
     }
     
     @Override
     public URL getDownloadURL()
     {
-        return dlurl;
+        return this.dlurl;
     }
     
     @Override
     public List<IDependency> getTransitiveDependencies()
     {
-        return transitiveDependencies;
+        return this.transitiveDependencies;
     }
 }

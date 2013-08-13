@@ -24,24 +24,24 @@ public class Main
     public static boolean    autoUpdate;
     public static boolean    firstRun;
     
-    public static void main(String[] args) throws Exception
+    public static void main(final String[] args) throws Exception
     {
         if (GraphicsEnvironment.isHeadless())
-            out = new NoGui();
+            Main.out = new NoGui();
         else
-            out = new Gui();
-        out.init();
-        out.println("Welcome to the ForgeEssentials installer.");
-        out.println("=========================================");
+            Main.out = new Gui();
+        Main.out.init();
+        Main.out.println("Welcome to the ForgeEssentials installer.");
+        Main.out.println("=========================================");
         
-        setup();
+        Main.setup();
     }
     
     public static void finish()
     {
-        out.println("=========================================");
-        out.println("End of the ForgeEssentials installer.");
-        out.println("The actual dowloading of the modules and libs will happen the first Minecraft launch.");
+        Main.out.println("=========================================");
+        Main.out.println("End of the ForgeEssentials installer.");
+        Main.out.println("The actual dowloading of the modules and libs will happen the first Minecraft launch.");
     }
     
     /**
@@ -51,90 +51,90 @@ public class Main
      */
     public static void setup() throws IOException
     {
-        File mods = new File(".").getAbsoluteFile().getParentFile();
+        final File mods = new File(".").getAbsoluteFile().getParentFile();
         if (!Data.debug && !mods.getName().equalsIgnoreCase("mods"))
         {
             // This should only ever activate when run as standalone jar
-            out.println("You MUST run this in your mods folder.");
-            out.stop();
+            Main.out.println("You MUST run this in your mods folder.");
+            Main.out.stop();
         }
         else
         {
             // Will be run by MC and standalone jar
-            mclocation = mods.getParentFile();
-            FEfolder = new File(mclocation, "ForgeEssentials");
-            if (!FEfolder.exists()) FEfolder.mkdirs();
+            Main.mclocation = mods.getParentFile();
+            Main.FEfolder = new File(Main.mclocation, "ForgeEssentials");
+            if (!Main.FEfolder.exists()) Main.FEfolder.mkdirs();
             
-            configFile = new File(FEfolder, "Coremod.properties");
-            if (!configFile.exists()) configFile.createNewFile();
+            Main.configFile = new File(Main.FEfolder, "Coremod.properties");
+            if (!Main.configFile.exists()) Main.configFile.createNewFile();
             
-            modulesFolder = new File(FEfolder, "modules");
-            if (!modulesFolder.exists()) modulesFolder.mkdirs();
+            Main.modulesFolder = new File(Main.FEfolder, "modules");
+            if (!Main.modulesFolder.exists()) Main.modulesFolder.mkdirs();
             
-            dependencyFolder = new File(FEfolder, "dependency");
-            if (!dependencyFolder.exists()) dependencyFolder.mkdirs();
+            Main.dependencyFolder = new File(Main.FEfolder, "dependency");
+            if (!Main.dependencyFolder.exists()) Main.dependencyFolder.mkdirs();
             
-            FileInputStream in = new FileInputStream(configFile);
-            properties.load(in);
+            final FileInputStream in = new FileInputStream(Main.configFile);
+            Main.properties.load(in);
             in.close();
             
-            if (!properties.containsKey("firstRun")) properties.setProperty("firstRun", "true");
-            firstRun = Boolean.parseBoolean(properties.getProperty("firstRun"));
+            if (!Main.properties.containsKey("firstRun")) Main.properties.setProperty("firstRun", "true");
+            Main.firstRun = Boolean.parseBoolean(Main.properties.getProperty("firstRun"));
             
-            if (!properties.containsKey("autoUpdate")) properties.setProperty("autoUpdate", "true");
-            autoUpdate = Boolean.parseBoolean(properties.getProperty("autoUpdate"));
+            if (!Main.properties.containsKey("autoUpdate")) Main.properties.setProperty("autoUpdate", "true");
+            Main.autoUpdate = Boolean.parseBoolean(Main.properties.getProperty("autoUpdate"));
             
             /*
              * Branch stuff
              */
-            comments += "\n# Branch" + "\n#      Default: stable" + "\n#      Possible values: dev, beta, stable" + "\n#      Use this to change wich kind of release you want.";
-            if (!properties.containsKey("branch")) properties.setProperty("branch", "stable");
-            branch = properties.getProperty("branch");
-            if (!branch.equals("stable") && !branch.equals("beta") && !branch.equals("dev"))
+            Main.comments += "\n# Branch" + "\n#      Default: stable" + "\n#      Possible values: dev, beta, stable" + "\n#      Use this to change wich kind of release you want.";
+            if (!Main.properties.containsKey("branch")) Main.properties.setProperty("branch", "stable");
+            Main.branch = Main.properties.getProperty("branch");
+            if (!Main.branch.equals("stable") && !Main.branch.equals("beta") && !Main.branch.equals("dev"))
             {
-                System.out.println("[" + Data.NAME + "] Branch '" + branch + "' not found! Reverting to default.");
-                properties.setProperty("branches", "stable");
-                branch = "stable";
+                System.out.println("[" + Data.NAME + "] Branch '" + Main.branch + "' not found! Reverting to default.");
+                Main.properties.setProperty("branches", "stable");
+                Main.branch = "stable";
             }
             
-            saveProperties();
+            Main.saveProperties();
         }
     }
     
     public static void saveProperties() throws IOException
     {
-        FileOutputStream out = new FileOutputStream(Main.configFile);
-        properties.store(out, Main.comments);
+        final FileOutputStream out = new FileOutputStream(Main.configFile);
+        Main.properties.store(out, Main.comments);
         out.close();
     }
     
-    public static void setBranch(String branch)
+    public static void setBranch(final String branch)
     {
-        properties.setProperty("branch", branch.toLowerCase());
+        Main.properties.setProperty("branch", branch.toLowerCase());
         try
         {
-            saveProperties();
-            out.println("Changed branch to " + branch);
+            Main.saveProperties();
+            Main.out.println("Changed branch to " + branch);
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             e.printStackTrace();
-            out.print(e.getMessage());
+            Main.out.print(e.getMessage());
         }
     }
     
-    public static void setAutoUpdate(boolean b)
+    public static void setAutoUpdate(final boolean b)
     {
-        properties.setProperty("autoUpdate", b + "");
+        Main.properties.setProperty("autoUpdate", b + "");
         try
         {
-            saveProperties();
-            out.println("Changed autoupdate to " + b);
+            Main.saveProperties();
+            Main.out.println("Changed autoupdate to " + b);
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             e.printStackTrace();
-            out.print(e.getMessage());
+            Main.out.print(e.getMessage());
         }
     }
 }

@@ -6,6 +6,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map.Entry;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
@@ -14,132 +15,116 @@ import org.apache.commons.io.FileUtils;
 import com.forgeessentials.coremod.dependencies.DefaultDependency;
 import com.forgeessentials.coremod.dependencies.IDependency;
 import com.forgeessentials.coremod.dependencies.MavenDependency;
+import com.google.common.collect.HashMultimap;
 
 public class Module
 {
-    public String                name;
+    public String                       name;
     // MUST only conain .jar files!
-    public ArrayList<ModuleFile> files       = new ArrayList<ModuleFile>();
+    public ArrayList<ModuleFile>        files       = new ArrayList<ModuleFile>();
     
-    public HashSet<IDependency>  dependecies = new HashSet<IDependency>();
-    public HashSet<String>       ASMClasses  = new HashSet<String>();
-    public HashSet<String>       ATFiles     = new HashSet<String>();
+    public HashSet<IDependency>         dependecies = new HashSet<IDependency>();
+    public HashSet<String>              ASMClasses  = new HashSet<String>();
+    public HashSet<String>              ATFiles     = new HashSet<String>();
+    public HashMultimap<String, String> attributes  = HashMultimap.create();
     
-    public Module(String name)
+    public Module(final String name)
     {
         this.name = name;
     }
     
-    public Module(File file)
+    public Module(final File file)
     {
-        files.add(new ModuleFile(file, null, null));
+        this.files.add(new ModuleFile(file, null, null));
         this.name = file.getName();
     }
     
     /**
-     * This method gets all the dependencies, ASM classes and ATs from the files
-     * associated with this module.
+     * This method gets all the dependencies, ASM classes and ATs from the files associated with this module.
      */
     public void parceJarFiles()
     {
-        for (ModuleFile mFile : files)
-        {
+        for (final ModuleFile mFile : this.files)
             try
             {
-                JarFile jar = new JarFile(mFile.file);
-                Manifest mf = jar.getManifest();
+                final JarFile jar = new JarFile(mFile.file);
+                final Manifest mf = jar.getManifest();
                 if (mf != null)
                 {
+                    for (final Entry<Object, Object> attribute : mf.getMainAttributes().entrySet())
+                        for (final String value : attribute.getValue().toString().split(" "))
+                            this.attributes.put(attribute.getKey().toString(), value);
                     /*
-                     * Reading NORMAL libs from the modules' manifest files We
-                     * want: Space sperated pairs of filename:sha1
+                     * Reading NORMAL libs from the modules' manifest files We want: Space sperated pairs of filename:sha1
                      */
                     String libs = mf.getMainAttributes().getValue(Data.NORMALLIBKEY);
-                    if (libs != null)
+                    if (libs != null) for (final String lib : libs.split(" "))
                     {
-                        for (String lib : libs.split(" "))
-                        {
-                            DefaultDependency dependency = new DefaultDependency(lib);
-                            dependecies.add(dependency);
-                        }
+                        final DefaultDependency dependency = new DefaultDependency(lib);
+                        this.dependecies.add(dependency);
                     }
                     /*
-                     * Reading MAVEN libs from the modules' manifest files We
-                     * want: the maven name
+                     * Reading MAVEN libs from the modules' manifest files We want: the maven name
                      */
                     libs = mf.getMainAttributes().getValue(Data.MAVENLIBKEY);
-                    if (libs != null)
+                    if (libs != null) for (final String lib : libs.split(" "))
                     {
-                        for (String lib : libs.split(" "))
-                        {
-                            MavenDependency dependency = new MavenDependency(lib);
-                            dependecies.add(dependency);
-                            dependecies.addAll(Coremod.getDependencies(dependency));
-                        }
+                        final MavenDependency dependency = new MavenDependency(lib);
+                        this.dependecies.add(dependency);
+                        this.dependecies.addAll(Coremod.getDependencies(dependency));
                     }
                     
                     /*
                      * Reading ASM classes from the modules' manifest files
                      */
-                    String asmclasses = mf.getMainAttributes().getValue(Data.ASMKEY);
-                    if (asmclasses != null)
+                    final String asmclasses = mf.getMainAttributes().getValue(Data.ASMKEY);
+                    if (asmclasses != null) for (final String asmclass : asmclasses.split(" "))
                     {
-                        for (String asmclass : asmclasses.split(" "))
-                        {
-                            ASMClasses.add(asmclass);
-                            System.out.println("[" + Data.NAME + "] Added ASM class (" + asmclass + ") for module " + jar.getName());
-                        }
+                        this.ASMClasses.add(asmclass);
+                        System.out.println("[" + Data.NAME + "] Added ASM class (" + asmclass + ") for module file " + jar.getName());
                     }
                     
                     /*
                      * Reading AT Files from the modules' manifest files
                      */
-                    String ats = mf.getMainAttributes().getValue(Data.ATKEY);
-                    if (ats != null)
+                    final String ats = mf.getMainAttributes().getValue(Data.ATKEY);
+                    if (ats != null) for (final String at : ats.split(" "))
                     {
-                        for (String at : ats.split(" "))
-                        {
-                            ATFiles.add(at);
-                            System.out.println("[" + Data.NAME + "] Added AccessTransformer (" + at + ") for module " + jar.getName());
-                        }
+                        this.ATFiles.add(at);
+                        System.out.println("[" + Data.NAME + "] Added AccessTransformer (" + at + ") for module file " + jar.getName());
                     }
                 }
                 jar.close();
             }
-            catch (MalformedURLException e)
+            catch (final MalformedURLException e)
             {
                 e.printStackTrace();
             }
-            catch (IOException e)
+            catch (final IOException e)
             {
                 e.printStackTrace();
             }
-        }
     }
     
     /**
-     * Check to see if all module files exist. Checks hash, downloads new one if
-     * necessary.
+     * Check to see if all module files exist. Checks hash, downloads new one if necessary.
      * 
      * @throws IOException
      */
     public void checkJarFiles() throws IOException
     {
-        for (ModuleFile mFile : files)
+        for (final ModuleFile mFile : this.files)
         {
             String sum;
-            if (mFile.file.exists() && mFile.hash != null && (sum = Coremod.getChecksum(mFile.file)) != null)
+            if (mFile.file.exists() && mFile.hash != null && (sum = Coremod.getChecksum(mFile.file)) != null) if (!sum.equals(mFile.hash))
             {
-                if (!sum.equals(mFile.hash))
-                {
-                    System.out.println("[" + Data.NAME + "] Module " + name + "'s file " + mFile.file.getName() + " has wrong hash. Removing.");
-                    mFile.file.delete();
-                }
+                System.out.println("[" + Data.NAME + "] Module " + this.name + "'s file " + mFile.file.getName() + " has wrong hash. Removing.");
+                mFile.file.delete();
             }
             
             if (!mFile.file.exists())
             {
-                System.out.println("[" + Data.NAME + "] Module " + name + "'s file " + mFile.file.getName() + " is downloading.");
+                System.out.println("[" + Data.NAME + "] Module " + this.name + "'s file " + mFile.file.getName() + " is downloading.");
                 FileUtils.copyURLToFile(mFile.url, mFile.file);
             }
         }
@@ -151,7 +136,7 @@ public class Module
         public URL    url;
         public String hash;
         
-        public ModuleFile(File file, URL url, String hash)
+        public ModuleFile(final File file, final URL url, final String hash)
         {
             this.file = file;
             this.url = url;

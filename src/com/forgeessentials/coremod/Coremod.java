@@ -33,9 +33,7 @@ import cpw.mods.fml.relauncher.IFMLCallHook;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 
 /**
- * Main class, does all the real work. Look in {@link}Data to change URLs and
- * stuff. (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might
- * be useful for others.
+ * Main class, does all the real work. Look in {@link}Data to change URLs and stuff. (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
  * 
  * @author Dries007
  */
@@ -43,27 +41,28 @@ import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
 @IFMLLoadingPlugin.MCVersion(Data.MC_VERSION)
 public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
 {
-    public static final JdomParser JSON_PARSER = new JdomParser();
-    public static boolean          online;
+    public static final JdomParser        JSON_PARSER = new JdomParser();
+    public static boolean                 online;
     
-    JsonRootNode                   root;
+    JsonRootNode                          root;
     
     /*
      * Map with all modules
      */
-    HashMap<String, Module>        moduleMap   = new HashMap<String, Module>();
+    public static HashMap<String, Module> moduleMap   = new HashMap<String, Module>();
     
+    @Override
     public Void call() throws IOException
     {
         try
         {
-            root = JSON_PARSER.parse(new InputStreamReader(new URL(Data.JSONURL).openStream()));
-            online = true;
+            this.root = Coremod.JSON_PARSER.parse(new InputStreamReader(new URL(Data.JSONURL).openStream()));
+            Coremod.online = true;
             
             /*
              * Version check
              */
-            if (!root.getStringValue("CoreMod", Data.MC_VERSION).equals(Data.VERSION))
+            if (!this.root.getStringValue("CoreMod", Data.MC_VERSION).equals(Data.VERSION))
             {
                 System.out.println("[" + Data.NAME + "] ##############################################################");
                 System.out.println("[" + Data.NAME + "] ##### WARNING: The version you are using is out of date. #####");
@@ -71,18 +70,18 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                 System.out.println("[" + Data.NAME + "] ##############################################################");
             }
         }
-        catch (IOException e)
+        catch (final IOException e)
         {
-            online = false;
+            Coremod.online = false;
             System.out.println("[" + Data.NAME + "] JSON offline? Check manually: " + Data.JSONURL);
             System.out.println("[" + Data.NAME + "] ###################################################");
             System.out.println("[" + Data.NAME + "] ##### WARNING: The update URL is unavailable. #####");
             System.out.println("[" + Data.NAME + "] #####     Only classloading will be done!     #####");
             System.out.println("[" + Data.NAME + "] ###################################################");
         }
-        catch (InvalidSyntaxException e)
+        catch (final InvalidSyntaxException e)
         {
-            online = false;
+            Coremod.online = false;
             System.out.println("[" + Data.NAME + "] Invalid JSON at target? Check manually: " + Data.JSONURL);
             System.out.println("[" + Data.NAME + "] ###############################################");
             System.out.println("[" + Data.NAME + "] ##### WARNING: The update URL is corrupt. #####");
@@ -93,7 +92,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         Main.setup();
         
         // We need a valid JSON for first boot.
-        if (Main.firstRun && !online)
+        if (Main.firstRun && !Coremod.online)
         {
             System.out.println("[" + Data.NAME + "] I can't do a first run when the data server is offline. Sorry!");
             Runtime.getRuntime().exit(1);
@@ -106,13 +105,13 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         
         Main.properties.setProperty("firstRun", "false");
         
-        if (online)
+        if (Coremod.online)
         {
             try
             {
                 if (!Main.properties.containsKey("betaKey")) Main.properties.put("betaKey", "");
-                Scanner s = new Scanner(new URL(Data.LOCKURL + "?key=" + Main.properties.getProperty("betaKey")).openStream(), "UTF-8");
-                List<String> authBranches = Arrays.asList(s.useDelimiter("\\A").next().split(";"));
+                final Scanner s = new Scanner(new URL(Data.LOCKURL + "?key=" + Main.properties.getProperty("betaKey")).openStream(), "UTF-8");
+                final List<String> authBranches = Arrays.asList(s.useDelimiter("\\A").next().split(";"));
                 s.close();
                 if (!authBranches.contains(Main.branch))
                 {
@@ -124,29 +123,29 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                     System.out.println("[" + Data.NAME + "] ################################################################");
                 }
             }
-            catch (Exception e)
+            catch (final Exception e)
             {
                 System.out.println("[" + Data.NAME + "] Invalid JSON at target? Check manually: " + Data.LOCKURL + "?key=" + Main.properties.getProperty("betaKey"));
                 System.out.println("[" + Data.NAME + "] Could not verify the branch key.");
                 e.printStackTrace();
             }
-            HashSet<File> wantedModuleFiles = new HashSet<File>();
-            HashSet<IDependency> wantedDepencies = new HashSet<IDependency>();
-            JsonNode modules = root.getNode("modules");
-            for (JsonStringNode key : modules.getFields().keySet())
+            final HashSet<File> wantedModuleFiles = new HashSet<File>();
+            final HashSet<IDependency> wantedDepencies = new HashSet<IDependency>();
+            final JsonNode modules = this.root.getNode("modules");
+            for (final JsonStringNode key : modules.getFields().keySet())
             {
-                String moduleName = key.getText();
+                final String moduleName = key.getText();
                 
                 if (!Main.properties.containsKey("module." + moduleName)) Main.properties.put("module." + moduleName, "true");
                 if (Boolean.parseBoolean(Main.properties.getProperty("module." + moduleName)))
                 {
-                    Module module = new Module(moduleName);
+                    final Module module = new Module(moduleName);
                     /*
                      * Add files the JSON sais we need
                      */
-                    for (JsonNode fileNode : modules.getArrayNode(moduleName, Data.MC_VERSION, Main.branch))
+                    for (final JsonNode fileNode : modules.getArrayNode(moduleName, Data.MC_VERSION, Main.branch))
                     {
-                        File f = new File(Main.modulesFolder, fileNode.getStringValue("file"));
+                        final File f = new File(Main.modulesFolder, fileNode.getStringValue("file"));
                         wantedModuleFiles.add(f);
                         module.files.add(new ModuleFile(f, new URL(Data.BASEURL + fileNode.getStringValue("url")), fileNode.getStringValue("hash")));
                     }
@@ -163,13 +162,13 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                     
                     wantedDepencies.addAll(module.dependecies);
                     
-                    moduleMap.put(module.name, module);
+                    Coremod.moduleMap.put(module.name, module);
                 }
                 
                 /*
                  * Removing all non needed module files
                  */
-                for (File file : Main.modulesFolder.listFiles())
+                for (final File file : Main.modulesFolder.listFiles())
                 {
                     if (wantedModuleFiles.contains(file)) continue;
                     
@@ -178,22 +177,17 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                 }
             }
             
-            HashSet<String> usedDependencys = new HashSet<String>();
-            for (IDependency dependency : wantedDepencies)
+            final HashSet<String> usedDependencys = new HashSet<String>();
+            for (final IDependency dependency : wantedDepencies)
             {
-                File file = new File(Main.dependencyFolder, dependency.getFileName());
-                if (file.exists())
+                final File file = new File(Main.dependencyFolder, dependency.getFileName());
+                if (file.exists()) if (!Coremod.getChecksum(file).equals(dependency.getHash()))
                 {
-                    if (!getChecksum(file).equals(dependency.getHash()))
-                    {
-                        System.out.println("[" + Data.NAME + "] Lib " + dependency.getFileName() + " had wrong hash " + dependency.getHash() + " != " + getChecksum(file));
-                        file.delete();
-                    }
-                    else
-                    {
-                        usedDependencys.add(file.getName());
-                    }
+                    System.out.println("[" + Data.NAME + "] Lib " + dependency.getFileName() + " had wrong hash " + dependency.getHash() + " != " + Coremod.getChecksum(file));
+                    file.delete();
                 }
+                else
+                    usedDependencys.add(file.getName());
                 if (!file.exists())
                 {
                     System.out.println("[" + Data.NAME + "] Downloading lib " + dependency.getFileName() + " from " + dependency.getDownloadURL());
@@ -205,7 +199,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             /*
              * Remove not needed dependencies
              */
-            for (File file : Main.dependencyFolder.listFiles())
+            for (final File file : Main.dependencyFolder.listFiles())
             {
                 if (usedDependencys.contains(file.getName())) continue;
                 
@@ -214,24 +208,20 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             }
         }
         else
-        {
             /*
              * No checks for anything.
              */
-            for (File file : Main.modulesFolder.listFiles())
-            {
+            for (final File file : Main.modulesFolder.listFiles())
                 if (!file.getName().endsWith(".jar"))
                     file.delete();
                 else
                 {
-                    Module m = new Module(file);
+                    final Module m = new Module(file);
                     m.parceJarFiles();
-                    moduleMap.put(m.name, m);
+                    Coremod.moduleMap.put(m.name, m);
                 }
-            }
-        }
         
-        classloadAll();
+        this.classloadAll();
         
         Main.saveProperties();
         return null;
@@ -243,14 +233,14 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
      * @param dependency
      * @return
      */
-    public static HashSet<? extends IDependency> getDependencies(IDependency dependency)
+    public static HashSet<? extends IDependency> getDependencies(final IDependency dependency)
     {
-        HashSet<IDependency> set = new HashSet<IDependency>();
+        final HashSet<IDependency> set = new HashSet<IDependency>();
         
-        for (IDependency nd : dependency.getTransitiveDependencies())
+        for (final IDependency nd : dependency.getTransitiveDependencies())
         {
             set.add(nd);
-            if (dependency.getTransitiveDependencies() != null && !dependency.getTransitiveDependencies().isEmpty()) set.addAll(getDependencies(nd));
+            if (dependency.getTransitiveDependencies() != null && !dependency.getTransitiveDependencies().isEmpty()) set.addAll(Coremod.getDependencies(nd));
         }
         
         return set;
@@ -263,29 +253,29 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
      */
     public void classloadAll() throws MalformedURLException
     {
-        for (Module m : moduleMap.values())
+        for (final Module m : Coremod.moduleMap.values())
         {
             System.out.println("[" + Data.NAME + "] Module " + m.name + " adds:");
             
-            for (IDependency dependency : m.dependecies)
+            for (final IDependency dependency : m.dependecies)
             {
                 System.out.println("[" + Data.NAME + "] Dependency: " + dependency.getFileName());
                 Data.classLoader.addURL(new File(Main.dependencyFolder, dependency.getFileName()).toURI().toURL());
             }
             
-            for (ModuleFile mf : m.files)
+            for (final ModuleFile mf : m.files)
             {
                 System.out.println("[" + Data.NAME + "] Module file: " + mf.file.getName());
                 Data.classLoader.addURL(mf.file.toURI().toURL());
             }
             
-            for (String asmclass : m.ASMClasses)
+            for (final String asmclass : m.ASMClasses)
             {
                 System.out.println("[" + Data.NAME + "] ASM class: " + asmclass);
                 Data.classLoader.registerTransformer(asmclass);
             }
             
-            for (String at : m.ATFiles)
+            for (final String at : m.ATFiles)
             {
                 System.out.println("[" + Data.NAME + "] AT: " + at);
                 CustomAT.addTransformerMap(at);
@@ -293,38 +283,34 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         }
     }
     
-    public static String getChecksum(File file)
+    public static String getChecksum(final File file)
     {
         try
         {
-            MessageDigest md = MessageDigest.getInstance("SHA1");
-            FileInputStream fis = new FileInputStream(file);
-            byte[] dataBytes = new byte[1024];
+            final MessageDigest md = MessageDigest.getInstance("SHA1");
+            final FileInputStream fis = new FileInputStream(file);
+            final byte[] dataBytes = new byte[1024];
             
             int nread = 0;
             
             while ((nread = fis.read(dataBytes)) != -1)
-            {
                 md.update(dataBytes, 0, nread);
-            }
             
-            byte[] mdbytes = md.digest();
+            final byte[] mdbytes = md.digest();
             
             // convert the byte to hex format
-            StringBuffer sb = new StringBuffer("");
+            final StringBuffer sb = new StringBuffer("");
             for (int i = 0; i < mdbytes.length; i++)
-            {
                 sb.append(Integer.toString((mdbytes[i] & 0xff) + 0x100, 16).substring(1));
-            }
             fis.close();
             
             return sb.toString();
         }
-        catch (NoSuchAlgorithmException e)
+        catch (final NoSuchAlgorithmException e)
         {
             e.printStackTrace();
         }
-        catch (IOException e)
+        catch (final IOException e)
         {
             e.printStackTrace();
         }
@@ -332,17 +318,12 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         return null;
     }
     
-    public void injectData(Map<String, Object> data)
+    @Override
+    public void injectData(final Map<String, Object> data)
     {
-        if (data.containsKey("runtimeDeobfuscationEnabled") && data.get("runtimeDeobfuscationEnabled") != null)
-        {
-            Data.debug = !(Boolean) data.get("runtimeDeobfuscationEnabled");
-        }
+        if (data.containsKey("runtimeDeobfuscationEnabled") && data.get("runtimeDeobfuscationEnabled") != null) Data.debug = !(Boolean) data.get("runtimeDeobfuscationEnabled");
         
-        if (data.containsKey("classLoader") && data.get("classLoader") != null)
-        {
-            Data.classLoader = (LaunchClassLoader) data.get("classLoader");
-        }
+        if (data.containsKey("classLoader") && data.get("classLoader") != null) Data.classLoader = (LaunchClassLoader) data.get("classLoader");
     }
     
     @Override

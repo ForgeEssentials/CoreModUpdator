@@ -7,8 +7,7 @@ import java.util.List;
 import com.forgeessentials.coremod.Data;
 
 /**
- * (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be
- * useful for others.
+ * (c) Copyright Dries007.net 2013 Written for ForgeEssentials, but might be useful for others.
  * 
  * @author Dries007
  */
@@ -18,30 +17,30 @@ public class DefaultDependency implements IDependency
     String hash;
     URL    url;
     
-    public DefaultDependency(String code) throws MalformedURLException
+    public DefaultDependency(final String code) throws MalformedURLException
     {
-        String[] split = code.split(":");
+        final String[] split = code.split(":");
         this.filename = split[0];
         this.hash = split[1];
-        this.url = new URL(Data.LIBURL + filename);
+        this.url = new URL(Data.LIBURL + this.filename);
     }
     
     @Override
     public String getFileName()
     {
-        return filename;
+        return this.filename;
     }
     
     @Override
     public String getHash()
     {
-        return hash;
+        return this.hash;
     }
     
     @Override
     public URL getDownloadURL()
     {
-        return url;
+        return this.url;
     }
     
     @Override

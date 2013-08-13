@@ -27,90 +27,95 @@ public class Gui implements IHazOut
     @Override
     public void init() throws Exception
     {
-        frame = new JFrame();
-        frame.setBounds(100, 100, 450, 300);
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        this.frame = new JFrame();
+        this.frame.setBounds(100, 100, 450, 300);
+        this.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         
-        frame.setTitle("FE Installer");
+        this.frame.setTitle("FE Installer");
         
-        txtOut = new JTextArea();
-        frame.getContentPane().add(txtOut, BorderLayout.CENTER);
+        this.txtOut = new JTextArea();
+        this.frame.getContentPane().add(this.txtOut, BorderLayout.CENTER);
         
-        JPanel panel = new JPanel();
-        frame.getContentPane().add(panel, BorderLayout.SOUTH);
+        final JPanel panel = new JPanel();
+        this.frame.getContentPane().add(panel, BorderLayout.SOUTH);
         panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
         
-        btnStable = new JButton("Stable");
-        btnStable.addActionListener(new ActionListener()
+        this.btnStable = new JButton("Stable");
+        this.btnStable.addActionListener(new ActionListener()
         {
-            public void actionPerformed(ActionEvent e)
+            @Override
+            public void actionPerformed(final ActionEvent e)
             {
                 Main.setBranch("Stable");
             }
         });
         
-        chckbxAutoUpdate = new JCheckBox("autoUpdate");
-        chckbxAutoUpdate.addActionListener(new ActionListener()
+        this.chckbxAutoUpdate = new JCheckBox("autoUpdate");
+        this.chckbxAutoUpdate.addActionListener(new ActionListener()
         {
-            public void actionPerformed(ActionEvent e)
+            @Override
+            public void actionPerformed(final ActionEvent e)
             {
-                Main.setAutoUpdate(chckbxAutoUpdate.isSelected());
+                Main.setAutoUpdate(Gui.this.chckbxAutoUpdate.isSelected());
             }
         });
-        chckbxAutoUpdate.setSelected(true);
-        panel.add(chckbxAutoUpdate);
-        panel.add(btnStable);
+        this.chckbxAutoUpdate.setSelected(true);
+        panel.add(this.chckbxAutoUpdate);
+        panel.add(this.btnStable);
         
-        btnBeta = new JButton("Beta");
-        btnBeta.addActionListener(new ActionListener()
+        this.btnBeta = new JButton("Beta");
+        this.btnBeta.addActionListener(new ActionListener()
         {
-            public void actionPerformed(ActionEvent e)
+            @Override
+            public void actionPerformed(final ActionEvent e)
             {
                 Main.setBranch("Beta");
             }
         });
-        panel.add(btnBeta);
+        panel.add(this.btnBeta);
         
-        btnDev = new JButton("Dev");
-        btnDev.addActionListener(new ActionListener()
+        this.btnDev = new JButton("Dev");
+        this.btnDev.addActionListener(new ActionListener()
         {
-            public void actionPerformed(ActionEvent e)
+            @Override
+            public void actionPerformed(final ActionEvent e)
             {
                 Main.setBranch("Dev");
             }
         });
-        panel.add(btnDev);
+        panel.add(this.btnDev);
         
-        btnClose = new JButton("Close");
-        btnClose.addActionListener(new ActionListener()
+        this.btnClose = new JButton("Close");
+        this.btnClose.addActionListener(new ActionListener()
         {
-            public void actionPerformed(ActionEvent e)
+            @Override
+            public void actionPerformed(final ActionEvent e)
             {
                 System.exit(0);
             }
         });
-        panel.add(btnClose);
-        frame.setVisible(true);
+        panel.add(this.btnClose);
+        this.frame.setVisible(true);
     }
     
     @Override
-    public void print(Object o)
+    public void print(final Object o)
     {
-        txtOut.setText(txtOut.getText() + o.toString());
+        this.txtOut.setText(this.txtOut.getText() + o.toString());
     }
     
     @Override
-    public void println(Object o)
+    public void println(final Object o)
     {
-        txtOut.setText(txtOut.getText() + o.toString() + "\n");
+        this.txtOut.setText(this.txtOut.getText() + o.toString() + "\n");
     }
     
     @Override
     public void stop()
     {
-        btnStable.setEnabled(false);
-        btnBeta.setEnabled(false);
-        btnDev.setEnabled(false);
-        chckbxAutoUpdate.setEnabled(false);
+        this.btnStable.setEnabled(false);
+        this.btnBeta.setEnabled(false);
+        this.btnDev.setEnabled(false);
+        this.chckbxAutoUpdate.setEnabled(false);
     }
 }

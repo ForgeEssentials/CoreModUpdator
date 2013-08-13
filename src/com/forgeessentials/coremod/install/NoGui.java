@@ -8,14 +8,15 @@ public class NoGui implements IHazOut
     
     static BufferedReader read;
     
+    @Override
     public void init() throws Exception
     {
-        read = new BufferedReader(new InputStreamReader(System.in));
+        NoGui.read = new BufferedReader(new InputStreamReader(System.in));
         
-        autoUpdate();
-        branchMenu();
+        this.autoUpdate();
+        this.branchMenu();
         
-        read.close();
+        NoGui.read.close();
     }
     
     private void autoUpdate() throws Exception
@@ -24,7 +25,7 @@ public class NoGui implements IHazOut
         System.out.println("[0] Yes");
         System.out.println("[1] No");
         
-        String line = read.readLine();
+        final String line = NoGui.read.readLine();
         try
         {
             switch (Integer.parseInt(line))
@@ -37,13 +38,13 @@ public class NoGui implements IHazOut
                     break;
                 default:
                     System.out.println("That is not a valid choise.");
-                    autoUpdate();
+                    this.autoUpdate();
             }
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             System.out.println("That is not a valid number.");
-            autoUpdate();
+            this.autoUpdate();
         }
     }
     
@@ -55,7 +56,7 @@ public class NoGui implements IHazOut
         System.out.println("[1] Beta");
         System.out.println("[2] Dev");
         
-        String line = read.readLine();
+        final String line = NoGui.read.readLine();
         try
         {
             switch (Integer.parseInt(line))
@@ -71,24 +72,24 @@ public class NoGui implements IHazOut
                     break;
                 default:
                     System.out.println("That is not a valid choise.");
-                    branchMenu();
+                    this.branchMenu();
             }
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             System.out.println("That is not a valid number.");
-            branchMenu();
+            this.branchMenu();
         }
     }
     
     @Override
-    public void print(Object o)
+    public void print(final Object o)
     {
         System.out.print(o);
     }
     
     @Override
-    public void println(Object o)
+    public void println(final Object o)
     {
         System.out.println(o);
     }

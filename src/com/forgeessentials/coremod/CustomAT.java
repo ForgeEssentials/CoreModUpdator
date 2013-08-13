@@ -8,8 +8,7 @@ import java.util.List;
 import cpw.mods.fml.common.asm.transformers.AccessTransformer;
 
 /**
- * Thank ChickenBones for this one.
- * (CodeChickenCore/codechicken/core/asm/CodeChickenAccessTransformer.java)
+ * Thank ChickenBones for this one. (CodeChickenCore/codechicken/core/asm/CodeChickenAccessTransformer.java)
  * 
  * @author Dries007
  */
@@ -21,30 +20,30 @@ public class CustomAT extends AccessTransformer
     public CustomAT() throws IOException
     {
         super();
-        instance = this;
-        for (String file : mapFileList)
-            readMapFile(file);
+        CustomAT.instance = this;
+        for (final String file : CustomAT.mapFileList)
+            this.readMapFile(file);
         
-        mapFileList = null;
+        CustomAT.mapFileList = null;
     }
     
-    public static void addTransformerMap(String mapFile)
+    public static void addTransformerMap(final String mapFile)
     {
-        if (instance == null)
-            mapFileList.add(mapFile);
+        if (CustomAT.instance == null)
+            CustomAT.mapFileList.add(mapFile);
         else
-            instance.readMapFile(mapFile);
+            CustomAT.instance.readMapFile(mapFile);
     }
     
-    private void readMapFile(String mapFile)
+    private void readMapFile(final String mapFile)
     {
         try
         {
-            Method parentMapFile = AccessTransformer.class.getDeclaredMethod("readMapFile", String.class);
+            final Method parentMapFile = AccessTransformer.class.getDeclaredMethod("readMapFile", String.class);
             parentMapFile.setAccessible(true);
             parentMapFile.invoke(this, mapFile);
         }
-        catch (Exception e)
+        catch (final Exception e)
         {
             throw new RuntimeException(e);
         }
