@@ -13,7 +13,6 @@ public class Main
 {
     static IHazOut           out;
     
-    public static String     comments   = "=== READ THIS ===" + "\n# autoUpdate" + "\n#      Default: true" + "\n#      Check with the FE repo to see if there is a new version, if there is, it will be downloaded and used.";
     public static File       mclocation;
     public static File       FEfolder;
     public static File       configFile;
@@ -87,7 +86,6 @@ public class Main
             /*
              * Branch stuff
              */
-            Main.comments += "\n# Branch" + "\n#      Default: stable" + "\n#      Possible values: dev, beta, stable" + "\n#      Use this to change wich kind of release you want.";
             if (!Main.properties.containsKey("branch")) Main.properties.setProperty("branch", "stable");
             Main.branch = Main.properties.getProperty("branch");
             if (!Main.branch.equals("stable") && !Main.branch.equals("beta") && !Main.branch.equals("dev"))
@@ -104,7 +102,7 @@ public class Main
     public static void saveProperties() throws IOException
     {
         final FileOutputStream out = new FileOutputStream(Main.configFile);
-        Main.properties.store(out, Main.comments);
+        Main.properties.store(out, "Look in the readme file for more info on how to use this.");
         out.close();
     }
     

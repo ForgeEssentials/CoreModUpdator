@@ -136,7 +136,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             {
                 final String moduleName = key.getText();
                 
-                if (!Main.properties.containsKey("module." + moduleName)) Main.properties.put("module." + moduleName, "true");
+                if (!Main.properties.containsKey("module." + moduleName)) Main.properties.put("module." + moduleName, modules.getStringValue(moduleName, "default"));
                 if (Boolean.parseBoolean(Main.properties.getProperty("module." + moduleName)))
                 {
                     final Module module = new Module(moduleName);
