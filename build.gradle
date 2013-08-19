@@ -1,0 +1,41 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://oss.sonatype.org/content/repositories/snapshots"
+        }
+    }
+    dependencies {
+		classpath 'com.github.abrarsyed.gmcp:GMCP:0.7.4-SNAPSHOT'
+    }
+}
+
+apply plugin: "gmcp"
+
+archivesBaseName = 'ForgeEssentialsLoader'
+minecraft.minecraftVersion = '1.6.2'
+
+processResources{}
+
+jar {
+	manifest 
+	{
+        attributes("FMLCorePlugin": "com.forgeessentials.coremod.Coremod", "Main-Class": "com.forgeessentials.coremod.install.Main")
+    }
+}
+
+
+// because the normal default jar task has been modified to be obfuscated
+task deobfJar(type: Jar) {
+	from sourceSets.main.output
+	appendix = 'dev'
+	
+	manifest 
+	{
+        attributes("FMLCorePlugin": "com.forgeessentials.coremod.Coremod", "Main-Class": "com.forgeessentials.coremod.install.Main")
+    }
+}
+
+artifacts {
+	archives deobfJar
+}
