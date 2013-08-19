@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Scanner;
 
 import net.minecraft.launchwrapper.LaunchClassLoader;
@@ -54,6 +55,56 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     @Override
     public Void call() throws IOException
     {
+        File dev = new File(Main.FEfolder, "dev.properties");
+        if (dev.exists())
+        {
+            System.out.println("[" + Data.NAME + "] ###########################################################");
+            System.out.println("[" + Data.NAME + "] #### DEV MODE ENGAGED. NO CLASSLOADING OR LIB LOADING. ####");
+            System.out.println("[" + Data.NAME + "] ####       ONLY USE IN A DEVELOPMENT ENVIRONMENT       ####");
+            System.out.println("[" + Data.NAME + "] ###########################################################");
+            
+            final FileInputStream in = new FileInputStream(dev);
+            Properties properties = new Properties();
+            properties.load(in);
+            in.close();
+            
+            if (properties.containsKey(Data.ASMKEY))
+            {
+                for (String className : properties.getProperty(Data.ASMKEY).split(" "))
+                {
+                    System.out.println("[" + Data.NAME + "] DEV ASM class: " + className);
+                    try
+                    {
+                        Data.classLoader.registerTransformer(className);
+                    }
+                    catch (Exception e)
+                    {
+                        System.out.println("[" + Data.NAME + "] DEV ASM class ERROR.");
+                        e.printStackTrace();
+                    }
+                }
+            }
+            
+            if (properties.containsKey(Data.ATKEY))
+            {
+                for (String ATfile : properties.getProperty(Data.ATKEY).split(" "))
+                {
+                    System.out.println("[" + Data.NAME + "] DEV AccessTransformer: " + ATfile);
+                    try
+                    {
+                        CustomAT.addTransformerMap(ATfile);
+                    }
+                    catch (Exception e)
+                    {
+                        System.out.println("[" + Data.NAME + "] DEV AccessTransformer ERROR.");
+                        e.printStackTrace();
+                    }
+                }
+            }
+            
+            return null;
+        }
+        
         try
         {
             this.root = Coremod.JSON_PARSER.parse(new InputStreamReader(new URL(Data.JSONURL).openStream()));
@@ -321,6 +372,12 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     @Override
     public void injectData(final Map<String, Object> data)
     {
+        if (data.containsKey("mcLocation"))
+        {
+            Main.mclocation = (File) data.get("mcLocation");
+            Main.FEfolder = new File(Main.mclocation, "ForgeEssentials");
+        }
+        
         if (data.containsKey("runtimeDeobfuscationEnabled") && data.get("runtimeDeobfuscationEnabled") != null) Data.debug = !(Boolean) data.get("runtimeDeobfuscationEnabled");
         
         if (data.containsKey("classLoader") && data.get("classLoader") != null) Data.classLoader = (LaunchClassLoader) data.get("classLoader");

@@ -59,8 +59,12 @@ public class Main
         }
         else
         {
-            // Will be run by MC and standalone jar
-            Main.mclocation = mods.getParentFile();
+            if (Main.mclocation == null)
+            {
+             // Will be run by MC and standalone jar
+                Main.mclocation = mods.getParentFile();
+            }
+            
             Main.FEfolder = new File(Main.mclocation, "ForgeEssentials");
             if (!Main.FEfolder.exists()) Main.FEfolder.mkdirs();
             
