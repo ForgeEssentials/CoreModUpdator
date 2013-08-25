@@ -20,9 +20,11 @@ public class Main
     public static File       dependencyFolder;
     public static String     branch;
     public static Properties properties = new Properties();
+    public static Properties modules = new Properties();
     public static boolean    autoUpdate;
     public static boolean    firstRun;
-    
+    private static File      modulesFile;
+
     public static void main(final String[] args) throws Exception
     {
         if (GraphicsEnvironment.isHeadless())
@@ -70,17 +72,24 @@ public class Main
             
             Main.configFile = new File(Main.FEfolder, "Coremod.properties");
             if (!Main.configFile.exists()) Main.configFile.createNewFile();
-            
+
+            Main.modulesFile = new File(Main.FEfolder, "Modules.properties");
+            if (!Main.modulesFile.exists()) Main.modulesFile.createNewFile();
+
             Main.modulesFolder = new File(Main.FEfolder, "modules");
             if (!Main.modulesFolder.exists()) Main.modulesFolder.mkdirs();
             
             Main.dependencyFolder = new File(Main.FEfolder, "dependency");
             if (!Main.dependencyFolder.exists()) Main.dependencyFolder.mkdirs();
             
-            final FileInputStream in = new FileInputStream(Main.configFile);
+            FileInputStream in = new FileInputStream(Main.configFile);
             Main.properties.load(in);
             in.close();
-            
+
+            in = new FileInputStream(Main.modulesFile);
+            Main.modules.load(in);
+            in.close();
+
             if (!Main.properties.containsKey("firstRun")) Main.properties.setProperty("firstRun", "true");
             Main.firstRun = Boolean.parseBoolean(Main.properties.getProperty("firstRun"));
             
@@ -105,8 +114,13 @@ public class Main
     
     public static void saveProperties() throws IOException
     {
-        final FileOutputStream out = new FileOutputStream(Main.configFile);
+        FileOutputStream out = new FileOutputStream(Main.configFile);
         Main.properties.store(out, "Look in the readme file for more info on how to use this.");
+        out.close();
+
+        out = new FileOutputStream(Main.modulesFile);
+        Main.modules.store(out, "This list defines what modules get downloaded.\n" +
+                "If a module depends on another module, that module will be downloaded and that module's setting will be overwritten.");
         out.close();
     }
     

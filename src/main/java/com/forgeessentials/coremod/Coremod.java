@@ -1,9 +1,6 @@
 package com.forgeessentials.coremod;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -16,6 +13,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Scanner;
 
+import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import net.minecraft.launchwrapper.LaunchClassLoader;
 
 import org.apache.commons.io.FileUtils;
@@ -51,60 +49,16 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
      * Map with all modules
      */
     public static HashMap<String, Module> moduleMap   = new HashMap<String, Module>();
-    
+    private boolean manualInstallAndFirstRun;
+    final HashSet<File> wantedModuleFiles = new HashSet<File>();
+    final HashSet<String> intermoduleDependencies = new HashSet<String>();
+    final HashSet<IDependency> wantedDepencies = new HashSet<IDependency>();
+
     @Override
     public Void call() throws IOException
     {
-        File dev = new File(Main.FEfolder, "dev.properties");
-        if (dev.exists())
-        {
-            System.out.println("[" + Data.NAME + "] ###########################################################");
-            System.out.println("[" + Data.NAME + "] #### DEV MODE ENGAGED. NO CLASSLOADING OR LIB LOADING. ####");
-            System.out.println("[" + Data.NAME + "] ####       ONLY USE IN A DEVELOPMENT ENVIRONMENT       ####");
-            System.out.println("[" + Data.NAME + "] ###########################################################");
-            
-            final FileInputStream in = new FileInputStream(dev);
-            Properties properties = new Properties();
-            properties.load(in);
-            in.close();
-            
-            if (properties.containsKey(Data.ASMKEY))
-            {
-                for (String className : properties.getProperty(Data.ASMKEY).split(" "))
-                {
-                    System.out.println("[" + Data.NAME + "] DEV ASM class: " + className);
-                    try
-                    {
-                        Data.classLoader.registerTransformer(className);
-                    }
-                    catch (Exception e)
-                    {
-                        System.out.println("[" + Data.NAME + "] DEV ASM class ERROR.");
-                        e.printStackTrace();
-                    }
-                }
-            }
-            
-            if (properties.containsKey(Data.ATKEY))
-            {
-                for (String ATfile : properties.getProperty(Data.ATKEY).split(" "))
-                {
-                    System.out.println("[" + Data.NAME + "] DEV AccessTransformer: " + ATfile);
-                    try
-                    {
-                        CustomAT.addTransformerMap(ATfile);
-                    }
-                    catch (Exception e)
-                    {
-                        System.out.println("[" + Data.NAME + "] DEV AccessTransformer ERROR.");
-                        e.printStackTrace();
-                    }
-                }
-            }
-            
-            return null;
-        }
-        
+        if (dev()) return null;
+
         try
         {
             this.root = Coremod.JSON_PARSER.parse(new InputStreamReader(new URL(Data.JSONURL).openStream()));
@@ -148,11 +102,21 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             System.out.println("[" + Data.NAME + "] I can't do a first run when the data server is offline. Sorry!");
             Runtime.getRuntime().exit(1);
         }
-        
+
         // Status message
-        if (Main.firstRun)
+        if (Main.modulesFolder.exists() && Main.firstRun)
+        {
+            System.out.println("[" + Data.NAME + "] Doing a full first run on manual install.");
+            manualInstallAndFirstRun = true;
+        }
+        else if (Main.firstRun)
+        {
             System.out.println("[" + Data.NAME + "] Doing a full first run.");
-        else if (!Main.autoUpdate) System.out.println("[" + Data.NAME + "] You are NOT using autoupdate. We will only check dependencies and classload.");
+        }
+        else if (!Main.autoUpdate)
+        {
+            System.out.println("[" + Data.NAME + "] You are NOT using autoupdate. We will only check dependencies and classload.");
+        }
         
         Main.properties.setProperty("firstRun", "false");
         
@@ -166,12 +130,11 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                 s.close();
                 if (!authBranches.contains(Main.branch))
                 {
-                    Main.branch = authBranches.get(authBranches.size() - 1);
                     System.out.println("[" + Data.NAME + "] ################################################################");
                     System.out.println("[" + Data.NAME + "] #####  WARNING: You are using a non autenticated branch.   #####");
                     System.out.println("[" + Data.NAME + "] #####        Enter your betaKey in the config file!        #####");
-                    System.out.println("[" + Data.NAME + "] #####             Will revert back to '" + Main.branch + "'.            #####");
                     System.out.println("[" + Data.NAME + "] ################################################################");
+                    Runtime.getRuntime().exit(42);
                 }
             }
             catch (final Exception e)
@@ -180,52 +143,14 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                 System.out.println("[" + Data.NAME + "] Could not verify the branch key.");
                 e.printStackTrace();
             }
-            final HashSet<File> wantedModuleFiles = new HashSet<File>();
-            final HashSet<IDependency> wantedDepencies = new HashSet<IDependency>();
+
+
             final JsonNode modules = this.root.getNode("modules");
+
             for (final JsonStringNode key : modules.getFields().keySet())
             {
-                final String moduleName = key.getText();
-                
-                if (!Main.properties.containsKey("module." + moduleName)) Main.properties.put("module." + moduleName, modules.getStringValue(moduleName, "default"));
-                if (Boolean.parseBoolean(Main.properties.getProperty("module." + moduleName)))
-                {
-                    final Module module = new Module(moduleName);
-                    /*
-                     * Add files the JSON sais we need
-                     */
-                    for (final JsonNode fileNode : modules.getArrayNode(moduleName, Data.MC_VERSION, Main.branch))
-                    {
-                        final File f = new File(Main.modulesFolder, fileNode.getStringValue("file"));
-                        wantedModuleFiles.add(f);
-                        module.files.add(new ModuleFile(f, new URL(Data.BASEURL + fileNode.getStringValue("url")), fileNode.getStringValue("hash")));
-                    }
-                    
-                    /*
-                     * Check to see if said files exist
-                     */
-                    module.checkJarFiles();
-                    
-                    /*
-                     * Parse the modules jar files for interesting things
-                     */
-                    module.parceJarFiles();
-                    
-                    wantedDepencies.addAll(module.dependecies);
-                    
-                    Coremod.moduleMap.put(module.name, module);
-                }
-                
-                /*
-                 * Removing all non needed module files
-                 */
-                for (final File file : Main.modulesFolder.listFiles())
-                {
-                    if (wantedModuleFiles.contains(file)) continue;
-                    
-                    file.delete();
-                    System.out.println("[" + Data.NAME + "] Removing not needed module file " + file.getName());
-                }
+                if (!moduleMap.containsKey(key.getText()))
+                    parseModule(modules, key.getText());
             }
             
             final HashSet<String> usedDependencys = new HashSet<String>();
@@ -277,7 +202,134 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         Main.saveProperties();
         return null;
     }
-    
+
+    private void parseModule(JsonNode modules, String moduleName) throws IOException
+    {
+        System.out.println("Parsing module " + moduleName);
+        if (!Main.modules.containsKey(moduleName))
+        {
+            if (manualInstallAndFirstRun)
+            {
+                if (new File(Main.modulesFolder, modules.getArrayNode(moduleName, Data.MC_VERSION, Main.branch, "files").get(0).getStringValue("file")).exists())
+                    Main.modules.put(moduleName, "true");
+                else
+                    Main.modules.put(moduleName, "false");
+            }
+            else
+            {
+                Main.modules.put(moduleName, modules.getBooleanValue(moduleName, "default", FMLLaunchHandler.side().name().toLowerCase()).toString());
+            }
+        }
+        if (Boolean.parseBoolean(Main.modules.getProperty(moduleName)))
+        {
+            final Module module = new Module(moduleName);
+            /*
+             * Add files the JSON sais we need
+             */
+            for (final JsonNode fileNode : modules.getArrayNode(moduleName, Data.MC_VERSION, Main.branch, "files"))
+            {
+                final File f = new File(Main.modulesFolder, fileNode.getStringValue("file"));
+                wantedModuleFiles.add(f);
+                module.files.add(new ModuleFile(f, new URL(Data.BASEURL + fileNode.getStringValue("url")), fileNode.getStringValue("hash")));
+            }
+
+            /*
+             * Intermodule dependedcendy. Forcing setting on module file to true and rerun the module parsing if not yet loaded
+             */
+            for (final JsonNode dependency : modules.getArrayNode(moduleName, Data.MC_VERSION, Main.branch, "dependencies"))
+            {
+                Main.modules.put(dependency.getText(), "true");
+                if (!moduleMap.containsKey(dependency.getText()))
+                    parseModule(modules, dependency.getText());
+            }
+
+            /*
+             * Check to see if said files exist
+             */
+            module.checkJarFiles();
+
+            /*
+             * Parse the modules jar files for interesting things
+             */
+            module.parceJarFiles();
+
+            wantedDepencies.addAll(module.dependecies);
+
+            Coremod.moduleMap.put(module.name, module);
+        }
+
+        /*
+         * Removing all non needed module files
+         */
+        for (final File file : Main.modulesFolder.listFiles())
+        {
+            if (wantedModuleFiles.contains(file)) continue;
+
+            file.delete();
+            System.out.println("[" + Data.NAME + "] Removing not needed module file " + file.getName());
+        }
+    }
+
+    private boolean dev()
+    {
+        File dev = new File(Main.FEfolder, "dev.properties");
+        if (dev.exists())
+        {
+            try
+            {
+                System.out.println("[" + Data.NAME + "] ###########################################################");
+                System.out.println("[" + Data.NAME + "] #### DEV MODE ENGAGED. NO CLASSLOADING OR LIB LOADING. ####");
+                System.out.println("[" + Data.NAME + "] ####       ONLY USE IN A DEVELOPMENT ENVIRONMENT       ####");
+                System.out.println("[" + Data.NAME + "] ###########################################################");
+
+                final FileInputStream in = new FileInputStream(dev);
+                Properties properties = new Properties();
+                properties.load(in);
+                in.close();
+
+                if (properties.containsKey(Data.ASMKEY))
+                {
+                    for (String className : properties.getProperty(Data.ASMKEY).split(" "))
+                    {
+                        System.out.println("[" + Data.NAME + "] DEV ASM class: " + className);
+                        try
+                        {
+                            Data.classLoader.registerTransformer(className);
+                        }
+                        catch (Exception e)
+                        {
+                            System.out.println("[" + Data.NAME + "] DEV ASM class ERROR.");
+                            e.printStackTrace();
+                        }
+                    }
+                }
+
+                if (properties.containsKey(Data.ATKEY))
+                {
+                    for (String ATfile : properties.getProperty(Data.ATKEY).split(" "))
+                    {
+                        System.out.println("[" + Data.NAME + "] DEV AccessTransformer: " + ATfile);
+                        try
+                        {
+                            CustomAT.addTransformerMap(ATfile);
+                        }
+                        catch (Exception e)
+                        {
+                            System.out.println("[" + Data.NAME + "] DEV AccessTransformer ERROR.");
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+        }
+
+        return dev.exists();
+    }
+
     /**
      * Returns nested dependencies
      * 

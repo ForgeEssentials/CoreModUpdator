@@ -1,3 +1,7 @@
 .gradle
 build
 minecraft
+out
+*.iml
+*.ipr
+*.iws
