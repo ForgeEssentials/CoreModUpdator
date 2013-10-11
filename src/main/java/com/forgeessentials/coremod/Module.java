@@ -69,7 +69,7 @@ public class Module
                     libs = mf.getMainAttributes().getValue(Data.MAVENLIBKEY);
                     if (libs != null) for (final String lib : libs.split(" "))
                     {
-                        final MavenDependency dependency = new MavenDependency(lib);
+                        final MavenDependency dependency = new MavenDependency(Data.MAVENCENTRAL, lib);
                         this.dependecies.add(dependency);
                         this.dependecies.addAll(Coremod.getDependencies(dependency));
                     }

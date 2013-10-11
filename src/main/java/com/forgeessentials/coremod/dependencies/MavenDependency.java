@@ -25,17 +25,19 @@ public class MavenDependency implements IDependency
     public static final String       XMLTAG_version         = "version";
     public static final String       XMLTAG_scope           = "scope";
     public static final List<String> unwantedScope          = Arrays.asList("provided", "test");
-    
+
+    String                           repoURL;
     List<IDependency>                transitiveDependencies = new ArrayList<IDependency>();
     String                           filename;
     String                           hash;
     URL                              dlurl;
-    
-    public MavenDependency(final String name) throws IOException
+
+    public MavenDependency(final String repoURL, final String name) throws IOException
     {
+        this.repoURL = repoURL;
         final String[] split = name.split(":");
         this.filename = split[1] + '-' + split[2];
-        this.dlurl = new URL("http://repo1.maven.org/maven2/" + split[0].replace('.', '/') + '/' + split[1] + '/' + split[2] + '/' + this.filename + ".jar");
+        this.dlurl = new URL(repoURL + split[0].replace('.', '/') + '/' + split[1] + '/' + split[2] + '/' + this.filename + ".jar");
         
         final BufferedReader in = new BufferedReader(new InputStreamReader(new URL(this.dlurl + ".sha1").openStream()));
         this.hash = in.readLine();
@@ -45,7 +47,7 @@ public class MavenDependency implements IDependency
         
         try
         {
-            final URL pomurl = new URL("http://repo1.maven.org/maven2/" + split[0].replace('.', '/') + '/' + split[1] + '/' + split[2] + '/' + this.filename + ".pom");
+            final URL pomurl = new URL(repoURL + split[0].replace('.', '/') + '/' + split[1] + '/' + split[2] + '/' + this.filename + ".pom");
             final XMLInputFactory inputFactory = XMLInputFactory.newInstance();
             final XMLStreamReader reader = inputFactory.createXMLStreamReader(pomurl.openStream());
             
@@ -100,7 +102,7 @@ public class MavenDependency implements IDependency
                     
                     if (MavenDependency.unwantedScope.contains(scope)) continue;
                     
-                    this.transitiveDependencies.add(new MavenDependency(groupId + ":" + artifactId + ":" + version));
+                    this.transitiveDependencies.add(new MavenDependency(repoURL, groupId + ":" + artifactId + ":" + version));
                 }
             }
             

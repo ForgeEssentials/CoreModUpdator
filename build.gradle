@@ -1,12 +1,9 @@
 buildscript {
     repositories {
         mavenCentral()
-        maven {
-            url "https://oss.sonatype.org/content/repositories/snapshots"
-        }
     }
     dependencies {
-		classpath 'com.github.abrarsyed.gmcp:GMCP:0.8-SNAPSHOT'
+		classpath 'com.github.abrarsyed.gmcp:GMCP:0.8'
     }
 }
 
@@ -20,7 +17,7 @@ processResources{}
 jar {
 	manifest 
 	{
-        attributes("FMLCorePlugin": "com.forgeessentials.coremod.Coremod", "Main-Class": "com.forgeessentials.coremod.install.Main")
+        attributes("FMLCorePlugin": "com.forgeessentials.coremod.Coremod")
     }
 }
 
@@ -32,7 +29,7 @@ task deobfJar(type: Jar) {
 	
 	manifest 
 	{
-        attributes("FMLCorePlugin": "com.forgeessentials.coremod.Coremod", "Main-Class": "com.forgeessentials.coremod.install.Main")
+        attributes("FMLCorePlugin": "com.forgeessentials.coremod.Coremod")
     }
 }
 
