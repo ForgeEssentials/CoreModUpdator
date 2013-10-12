@@ -17,7 +17,7 @@ processResources{}
 jar {
 	manifest 
 	{
-        attributes("FMLCorePlugin": "com.forgeessentials.coremod.Coremod")
+        attributes("FMLCorePlugin": "net.dries007.coremod.Coremod")
     }
 }
 
@@ -29,7 +29,7 @@ task deobfJar(type: Jar) {
 	
 	manifest 
 	{
-        attributes("FMLCorePlugin": "com.forgeessentials.coremod.Coremod")
+        attributes("FMLCorePlugin": "net.dries007.coremod.Coremod")
     }
 }
 
