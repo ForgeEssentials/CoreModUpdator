@@ -71,6 +71,11 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         if (online)
         {
             doVersionCheck();
+            branchCheck();
+            parseOnlineModules();
+        }
+        else
+        {
             if (Data.firstRun)
             {
                 msg("#################################################################",
@@ -78,10 +83,8 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                         "#################################################################");
                 System.exit(1);
             }
-            branchCheck();
-            parseOnlineModules();
+            parseOfflineModules();
         }
-        else parseOfflineModules();
 
         removeUnwantedFiles();
 
@@ -291,7 +294,7 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         {
             if (!moduleMap.containsKey(key.getText()))
             {
-                parseModule(modules.getNode(key.getText()), key.getText());
+                parseModule(modules, key.getText());
             }
         }
 
@@ -351,6 +354,12 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
             if (Boolean.parseBoolean(Data.modules.getProperty(moduleName)))
             {
                 Module module = new Module(moduleName);
+
+                if (!moduleJSON.isNode(Data.get(Data.MC_VERSION)))
+                {
+                    msg("Module (" + moduleName + ") not available for your MC version. Skipping.");
+                    return;
+                }
 
                 // Get the files from the JSON
                 for (JsonNode fileJSON : moduleJSON.getArrayNode(Data.get(Data.MC_VERSION),
