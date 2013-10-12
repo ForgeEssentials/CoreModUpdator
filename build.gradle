@@ -9,10 +9,32 @@ buildscript {
 
 apply plugin: "gmcp"
 
+group = 'com.github.abrarsyed.secretroomsmod'
+version = '4.6.2'
 archivesBaseName = 'ForgeEssentialsLoader'
-minecraft.minecraftVersion = '1.6.2'
+minecraft {
+	minecraftVersion = "1.6.4"
+	forgeVersion = '916'
+}
 
-processResources{}
+processResources {
+    	// replace stuff in text files, not binary ones.
+    from(sourceSets.main.resources.srcDirs) {
+        include '**/*.lang'
+        include '**/*.info'
+
+		// replace version and MCVersion
+		// forge version is also accessible via project.minecraftforgeVersion
+		// it contains the full minecraft version, including buildNumber
+        expand 'version':project.version, 'mcversion':project.minecraft.minecraftVersion
+    }
+
+	// copy everything else, thats not text
+    from(sourceSets.main.resources.srcDirs) {
+        exclude '**/*.lang'
+        exclude '**/*.info'
+    }
+}
 
 jar {
 	manifest 
