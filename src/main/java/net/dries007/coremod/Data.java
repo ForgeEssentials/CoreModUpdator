@@ -43,8 +43,9 @@ public class Data
     public static final String MC_VERSION  = "mcversion";
     public static final String FORCEONLINE = "forceOnline";
 
-    public static final String LIBKEY_NORMAL = "libkey.normal";
-    public static final String LIBKEY_MAVEN  = "libkey.maven";
+    public static final String LIBKEY_NORMAL         = "libkey.normal";
+    public static final String LIBKEY_MAVEN          = "libkey.maven";
+    public static final String LIBKEY_EXTRAMAVENURLS = "libkey.extramavenurls";
 
     public static final String LIBURL_NORMAL = "liburl.normal";
     public static final String LIBURL_MAVEN  = "liburl.maven";
@@ -140,7 +141,8 @@ public class Data
         if (!userSettings.containsKey(get(USERKEY_FIRSTRUN))) userSettings.setProperty(get(USERKEY_FIRSTRUN), "true");
         firstRun = Boolean.parseBoolean(userSettings.getProperty(get(USERKEY_FIRSTRUN)));
 
-        if (!userSettings.containsKey(get(USERKEY_AUTOUPDATE))) userSettings.setProperty(get(USERKEY_AUTOUPDATE), "true");
+        if (!userSettings.containsKey(get(USERKEY_AUTOUPDATE)))
+            userSettings.setProperty(get(USERKEY_AUTOUPDATE), "true");
         autoUpdate = Boolean.parseBoolean(userSettings.getProperty(get(USERKEY_AUTOUPDATE)));
 
         if (!userSettings.containsKey(get(USERKEY_BRANCH)))

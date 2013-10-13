@@ -23,7 +23,6 @@
 
 package net.dries007.coremod;
 
-import com.google.common.collect.HashMultimap;
 import net.dries007.coremod.dependencies.DefaultDependency;
 import net.dries007.coremod.dependencies.IDependency;
 import net.dries007.coremod.dependencies.MavenDependency;
@@ -34,6 +33,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.jar.JarFile;
@@ -43,12 +43,11 @@ public class Module
 {
     public String name;
     // MUST only conain .jar files!
-    public ArrayList<ModuleFile> files = new ArrayList<ModuleFile>();
-
-    public HashSet<IDependency>         dependecies = new HashSet<IDependency>();
-    public HashSet<String>              ASMClasses  = new HashSet<String>();
-    public HashSet<String>              ATFiles     = new HashSet<String>();
-    public HashMultimap<String, String> attributes  = HashMultimap.create();
+    public ArrayList<ModuleFile>   files       = new ArrayList<ModuleFile>();
+    public HashSet<IDependency>    dependecies = new HashSet<IDependency>();
+    public HashSet<String>         ASMClasses  = new HashSet<String>();
+    public HashSet<String>         ATFiles     = new HashSet<String>();
+    public HashMap<String, String> attributes  = new HashMap<String, String>();
 
     public Module(final String name)
     {
@@ -74,12 +73,9 @@ public class Module
                 Manifest mf = jar.getManifest();
                 if (mf != null)
                 {
-                    for (final Entry<Object, Object> attribute : mf.getMainAttributes().entrySet())
+                    for (Entry<Object, Object> attribute : mf.getMainAttributes().entrySet())
                     {
-                        for (final String value : attribute.getValue().toString().split(" "))
-                        {
-                            attributes.put(attribute.getKey().toString(), value);
-                        }
+                        attributes.put(attribute.getKey().toString(), attribute.getValue().toString());
                     }
                     /**
                      * Reading NORMAL libs from the modules' manifest files.
@@ -88,7 +84,7 @@ public class Module
                     if (Data.hasKey(Data.LIBKEY_NORMAL, Data.LIBURL_NORMAL))
                     {
                         String libs = mf.getMainAttributes().getValue(Data.get(Data.LIBKEY_NORMAL));
-                        if (libs != null) for (final String lib : libs.split(" "))
+                        if (libs != null) for (String lib : libs.split(" "))
                         {
                             DefaultDependency dependency = new DefaultDependency(lib);
                             dependecies.add(dependency);
@@ -102,9 +98,9 @@ public class Module
                     if (Data.hasKey(Data.LIBKEY_MAVEN, Data.LIBURL_MAVEN))
                     {
                         String libs = mf.getMainAttributes().getValue(Data.get(Data.LIBKEY_MAVEN));
-                        if (libs != null) for (final String lib : libs.split(" "))
+                        if (libs != null) for (String lib : libs.split(" "))
                         {
-                            MavenDependency dependency = new MavenDependency(Data.get(Data.LIBURL_MAVEN), lib);
+                            MavenDependency dependency = new MavenDependency(this, lib);
                             dependecies.add(dependency);
                             dependecies.addAll(Coremod.getDependencies(dependency));
                         }
@@ -116,7 +112,7 @@ public class Module
                     if (Data.hasKey(Data.CLASSKEY_ASM))
                     {
                         String asmclasses = mf.getMainAttributes().getValue(Data.get(Data.CLASSKEY_ASM));
-                        if (asmclasses != null) for (final String asmclass : asmclasses.split(" "))
+                        if (asmclasses != null) for (String asmclass : asmclasses.split(" "))
                         {
                             this.ASMClasses.add(asmclass);
                             System.out.println("[" + Data.NAME + "] Added ASM class (" + asmclass + ") for module file " + jar.getName());
@@ -129,7 +125,7 @@ public class Module
                     if (Data.hasKey(Data.FILEKEY_TA))
                     {
                         String ats = mf.getMainAttributes().getValue(Data.FILEKEY_TA);
-                        if (ats != null) for (final String at : ats.split(" "))
+                        if (ats != null) for (String at : ats.split(" "))
                         {
                             this.ATFiles.add(at);
                             System.out.println("[" + Data.NAME + "] Added AccessTransformer (" + at + ") for module file " + jar.getName());

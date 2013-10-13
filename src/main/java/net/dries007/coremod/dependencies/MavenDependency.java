@@ -23,12 +23,16 @@
 
 package net.dries007.coremod.dependencies;
 
+import net.dries007.coremod.Data;
+import net.dries007.coremod.Module;
+
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -49,13 +53,45 @@ public class MavenDependency implements IDependency
     String hash;
     URL    dlurl;
 
-    public MavenDependency(final String repoURL, final String name) throws IOException
+    public MavenDependency(Module module, String name) throws IOException
     {
-        this.repoURL = repoURL;
         final String[] split = name.split(":");
         this.filename = split[1] + '-' + split[2];
-        this.dlurl = new URL(repoURL + split[0].replace('.',
-                '/') + '/' + split[1] + '/' + split[2] + '/' + this.filename + ".jar");
+
+        if (module.attributes.containsKey(Data.get(Data.LIBKEY_EXTRAMAVENURLS)))
+        {
+            boolean foundRepo = false;
+            String[] repos = module.attributes.get(Data.get(Data.LIBKEY_EXTRAMAVENURLS)).split(" ");
+            for (String repo : repos)
+            {
+                this.repoURL = repo;
+                this.dlurl = new URL(repoURL + split[0].replace('.',
+                        '/') + '/' + split[1] + '/' + split[2] + '/' + this.filename + ".jar");
+                try
+                {
+                    HttpURLConnection connection = (HttpURLConnection) this.dlurl.openConnection();
+                    connection.setRequestMethod("HEAD");
+                    connection.connect();
+                    if (connection.getResponseCode() != 404)
+                    {
+                        foundRepo = true;
+                        break;
+                    }
+                }
+                catch (Exception e)
+                {
+                    e.printStackTrace();
+                }
+            }
+            if (!foundRepo)
+            {
+                this.repoURL = Data.get(Data.LIBURL_MAVEN);
+            }
+        }
+        else
+        {
+            this.repoURL = Data.get(Data.LIBURL_MAVEN);
+        }
 
         final BufferedReader in = new BufferedReader(new InputStreamReader(new URL(this.dlurl + ".sha1").openStream()));
         this.hash = in.readLine();
@@ -89,52 +125,34 @@ public class MavenDependency implements IDependency
                         else if (reader.getEventType() == XMLStreamConstants.START_ELEMENT && reader.getName().getLocalPart().equals(
                                 MavenDependency.XMLTAG_groupId))
                         {
-                            while (reader.next() != XMLStreamConstants.CHARACTERS)
-                            {
-                            }
+                            while (reader.next() != XMLStreamConstants.CHARACTERS) {}
                             groupId = reader.getText();
-                            while (reader.next() != XMLStreamConstants.END_ELEMENT)
-                            {
-                            }
+                            while (reader.next() != XMLStreamConstants.END_ELEMENT) {}
                         }
                         else if (reader.getEventType() == XMLStreamConstants.START_ELEMENT && reader.getName().getLocalPart().equals(
                                 MavenDependency.XMLTAG_artifactId))
                         {
-                            while (reader.next() != XMLStreamConstants.CHARACTERS)
-                            {
-                            }
+                            while (reader.next() != XMLStreamConstants.CHARACTERS) {}
                             artifactId = reader.getText();
-                            while (reader.next() != XMLStreamConstants.END_ELEMENT)
-                            {
-                            }
+                            while (reader.next() != XMLStreamConstants.END_ELEMENT) {}
                         }
                         else if (reader.getEventType() == XMLStreamConstants.START_ELEMENT && reader.getName().getLocalPart().equals(
                                 MavenDependency.XMLTAG_version))
                         {
-                            while (reader.next() != XMLStreamConstants.CHARACTERS)
-                            {
-                            }
+                            while (reader.next() != XMLStreamConstants.CHARACTERS) {}
                             version = reader.getText();
-                            while (reader.next() != XMLStreamConstants.END_ELEMENT)
-                            {
-                            }
+                            while (reader.next() != XMLStreamConstants.END_ELEMENT) {}
                         }
                         else if (reader.getEventType() == XMLStreamConstants.START_ELEMENT && reader.getName().getLocalPart().equals(
                                 MavenDependency.XMLTAG_scope))
                         {
-                            while (reader.next() != XMLStreamConstants.CHARACTERS)
-                            {
-                            }
+                            while (reader.next() != XMLStreamConstants.CHARACTERS) {}
                             scope = reader.getText();
-                            while (reader.next() != XMLStreamConstants.END_ELEMENT)
-                            {
-                            }
+                            while (reader.next() != XMLStreamConstants.END_ELEMENT) {}
                         }
                     }
-
                     if (MavenDependency.unwantedScope.contains(scope)) continue;
-
-                    this.transitiveDependencies.add(new MavenDependency(repoURL,
+                    this.transitiveDependencies.add(new MavenDependency(module,
                             groupId + ":" + artifactId + ":" + version));
                 }
             }

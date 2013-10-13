@@ -54,6 +54,11 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     protected static HashSet<IDependency>    depencies       = new HashSet<IDependency>();
     protected static HashSet<String>         usedDependencys = new HashSet<String>();
 
+    public static HashMap<String, Module> getModuleMap()
+    {
+        return moduleMap;
+    }
+
     @Override
     public Void call() throws IOException
     {
