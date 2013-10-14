@@ -68,10 +68,10 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
         /**
          * When wanting  to test the JSON and download functionality, comment the line below.
          */
+        Data.readConfigs();
         if (checkDev()) return null;
 
         getJSON();
-        Data.readConfigs();
 
         if (online)
         {
@@ -141,16 +141,9 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
                 "#### DEV MODE ENGAGED. NO CLASSLOADING OR LIB LOADING. ####",
                 "####       ONLY USE IN A DEVELOPMENT ENVIRONMENT       ####",
                 "###########################################################");
-        if (Coremod.class.getResourceAsStream("dev.properties") == null)
-        {
-            msg("################################",
-                    "#### NO dev.properties FILE ####",
-                    "####  NO VALID DEBUG STATE  ####",
-                    "################################");
-            System.exit(1);
-        }
+
         Properties properties = new Properties();
-        properties.load(Coremod.class.getResourceAsStream("dev.properties"));
+        properties.load(new FileInputStream(new File(Data.FEfolder, "dev.properties")));
 
         if (properties.containsKey(Data.get(Data.CLASSKEY_ASM)))
         {
