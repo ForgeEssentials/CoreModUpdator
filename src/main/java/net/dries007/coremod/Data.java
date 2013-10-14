@@ -75,6 +75,14 @@ public class Data
     public static final String USERKEY_BRANCH     = "settings.key.branch";
     public static final String USERKEY_BRANCH_KEY = "settings.key.branchKey";
 
+    public static final String FILE_SETTINGS     = "file.settings";
+    public static final String FILE_MODULES      = "file.modules";
+    public static final String FOLDER_MODULES    = "folder.modules";
+    public static final String FOLDER_DEPENDENCY = "folder.dependency";
+
+    public static final String COMMENTS_SETTINGS = "comment.settings";
+    public static final String COMMENTS_MODULES = "comment.modules";
+
     /**
      * Internal crap
      */
@@ -123,16 +131,16 @@ public class Data
         FEfolder = new File(mclocation, Data.get(Data.DATAFOLDER));
         if (!FEfolder.exists()) FEfolder.mkdirs();
 
-        configFile = new File(FEfolder, "Launcher.properties");
+        configFile = new File(FEfolder, Data.get(Data.FILE_SETTINGS));
         if (!configFile.exists()) configFile.createNewFile();
 
-        modulesFile = new File(FEfolder, "Modules.properties");
+        modulesFile = new File(FEfolder, Data.get(Data.FILE_MODULES));
         if (!modulesFile.exists()) modulesFile.createNewFile();
 
-        modulesFolder = new File(FEfolder, "modules");
+        modulesFolder = new File(FEfolder, Data.get(Data.FOLDER_MODULES));
         if (!modulesFolder.exists()) modulesFolder.mkdirs();
 
-        dependencyFolder = new File(FEfolder, "dependency");
+        dependencyFolder = new File(FEfolder, Data.get(Data.FOLDER_DEPENDENCY));
         if (!dependencyFolder.exists()) dependencyFolder.mkdirs();
 
         userSettings.load(new FileInputStream(configFile));
@@ -152,8 +160,8 @@ public class Data
 
     protected static void saveConfigs() throws IOException
     {
-        userSettings.store(new FileOutputStream(configFile), "Expert settings. Please use the wiki when editing.");
-        modules.store(new FileOutputStream(modulesFile), "Modules you want = true; modules you don't want = false.");
+        userSettings.store(new FileOutputStream(configFile), Data.get(Data.COMMENTS_SETTINGS));
+        modules.store(new FileOutputStream(modulesFile), Data.get(Data.COMMENTS_MODULES));
     }
 
     /**
