@@ -496,12 +496,6 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     }
 
     @Override
-    public String[] getLibraryRequestClass()
-    {
-        return null; // NO OP.. FML depreciated this
-    }
-
-    @Override
     public String[] getASMTransformerClass()
     {
         return Data.ASMCLASSES;
