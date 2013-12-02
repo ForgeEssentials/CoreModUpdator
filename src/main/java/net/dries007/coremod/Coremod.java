@@ -496,10 +496,9 @@ public class Coremod implements IFMLLoadingPlugin, IFMLCallHook
     }
 
     @Override
-    @Deprecated
     public String[] getLibraryRequestClass()
     {
-        return null;
+        return null; // NO OP.. FML depreciated this
     }
 
     @Override
