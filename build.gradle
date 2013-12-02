@@ -1,19 +1,23 @@
 buildscript {
     repositories {
         mavenCentral()
+        maven {
+			name = "forge"
+			url = "http://files.minecraftforge.net/maven"
+		}
     }
     dependencies {
-		classpath 'com.github.abrarsyed.gmcp:GMCP:latest.integration'
+		classpath 'net.minecraftforge.gradle:ForgeGradle:1.0-SNAPSHOT'
     }
 }
 
-apply plugin: "gmcp"
+apply plugin: "forge"
 
 group = 'net.dries007.coremod'
 version = "2.0.${System.env.NR}"
 archivesBaseName = 'ForgeEssentialsLoader'
 minecraft {
-	minecraftVersion = "1.6.4"
+	minecraftVersion = "1.6.4-9.11.1.964"
 }
 
 processResources
